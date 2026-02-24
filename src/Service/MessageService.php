@@ -11,12 +11,13 @@ use App\Repository\UserRepositoryInterface;
  * Serwis wiadomości — tworzenie wątków, wysyłanie, usuwanie.
  *
  * Zero SQL, zero PDO, zero HTTP.
+ * Transakcje zarządzane wewnętrznie przez repozytorium.
  */
 class MessageService
 {
     public function __construct(
-        private MessageRepositoryInterface $messageRepo,
-        private UserRepositoryInterface $userRepo,
+        private readonly MessageRepositoryInterface $messageRepo,
+        private readonly UserRepositoryInterface $userRepo,
     ) {
     }
 
@@ -49,24 +50,32 @@ class MessageService
             return ['success' => false, 'message' => 'Żaden z podanych odbiorców nie ma aktywnego konta.'];
         }
 
-        $threadId = $this->messageRepo->createThread($subject ?: null);
+        $this->messageRepo->beginTransaction();
+        try {
+            $threadId = $this->messageRepo->createThread($subject ?: null);
 
-        // Dodaj uczestników
-        $allParticipants = array_unique(array_merge([$senderId], $validRecipients));
-        foreach ($allParticipants as $participantId) {
-            $this->messageRepo->addParticipant($threadId, (int) $participantId);
+            // Dodaj uczestników
+            $allParticipants = array_unique(array_merge([$senderId], $validRecipients));
+            foreach ($allParticipants as $participantId) {
+                $this->messageRepo->addParticipant($threadId, (int) $participantId);
+            }
+
+            // Wyślij pierwszą wiadomość
+            $messageId = $this->messageRepo->insertMessage($threadId, $senderId, $content);
+            $this->messageRepo->updateLastRead($threadId, $senderId);
+
+            $this->messageRepo->commit();
+
+            return [
+                'success' => true,
+                'message' => 'Wiadomość wysłana.',
+                'thread_id' => $threadId,
+                'message_id' => $messageId,
+            ];
+        } catch (\Exception $e) {
+            $this->messageRepo->rollBack();
+            return ['success' => false, 'message' => 'Błąd podczas wysyłania wiadomości. Spróbuj ponownie.'];
         }
-
-        // Wyślij pierwszą wiadomość
-        $messageId = $this->messageRepo->insertMessage($threadId, $senderId, $content);
-        $this->messageRepo->updateLastRead($threadId, $senderId);
-
-        return [
-            'success' => true,
-            'message' => 'Wiadomość wysłana.',
-            'thread_id' => $threadId,
-            'message_id' => $messageId,
-        ];
     }
 
     /**
@@ -88,16 +97,24 @@ class MessageService
             return ['success' => false, 'message' => 'Nie jesteś uczestnikiem tego wątku.', 'status' => 403];
         }
 
-        $messageId = $this->messageRepo->insertMessage($threadId, $senderId, $content);
-        $this->messageRepo->updateLastRead($threadId, $senderId);
+        $this->messageRepo->beginTransaction();
+        try {
+            $messageId = $this->messageRepo->insertMessage($threadId, $senderId, $content);
+            $this->messageRepo->updateLastRead($threadId, $senderId);
 
-        $msg = $this->messageRepo->findMessageById($messageId);
+            $this->messageRepo->commit();
 
-        return [
-            'success' => true,
-            'message' => 'Wiadomość wysłana.',
-            'data' => $msg ? $msg->toArray() : null,
-        ];
+            $msg = $this->messageRepo->findMessageById($messageId);
+
+            return [
+                'success' => true,
+                'message' => 'Wiadomość wysłana.',
+                'data' => $msg ? $msg->toArray() : null,
+            ];
+        } catch (\Exception $e) {
+            $this->messageRepo->rollBack();
+            return ['success' => false, 'message' => 'Błąd podczas wysyłania wiadomości. Spróbuj ponownie.'];
+        }
     }
 
     /**

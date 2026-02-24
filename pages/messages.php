@@ -6,162 +6,25 @@ $fullName = htmlspecialchars(trim($session['first_name'] . ' ' . $session['surna
 $roleName = htmlspecialchars(ucfirst($session['role_name']));
 $initials = mb_strtoupper(mb_substr($session['first_name'], 0, 1))
     . mb_strtoupper(mb_substr($session['surname'], 0, 1));
-$pdo = getDB();
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- * Pobierz wÄ…tki uĹĽytkownika wraz z metadanymi
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-$threads = [];
-try {
-    $stmt = $pdo->prepare(
-        'SELECT
-            mt.thread_id,
-            mt.subject,
-            mt.created_at                              AS thread_created_at,
-            lm.content                                 AS last_content,
-            lm.created_at                              AS last_at,
-            lm.sender_id                               AS last_sender_id,
-            CONCAT(lu.first_name, \' \', lu.surname)  AS last_sender_name,
-            mtp.last_read_at,
-            (
-                SELECT COUNT(*)
-                FROM messages m2
-                WHERE m2.thread_id  = mt.thread_id
-                  AND m2.sender_id != :uid2
-                  AND m2.deleted_at IS NULL
-                  AND (mtp.last_read_at IS NULL OR m2.created_at > mtp.last_read_at)
-            ) AS unread_count
-         FROM message_threads mt
-         JOIN message_thread_participants mtp
-              ON mtp.thread_id = mt.thread_id AND mtp.user_id = :uid1
-         LEFT JOIN messages lm
-              ON lm.message_id = (
-                  SELECT message_id FROM messages
-                  WHERE thread_id  = mt.thread_id
-                    AND deleted_at IS NULL
-                  ORDER BY created_at DESC
-                  LIMIT 1
-              )
-         LEFT JOIN users lu ON lu.user_id = lm.sender_id
-         ORDER BY COALESCE(lm.created_at, mt.created_at) DESC'
-    );
-    $stmt->execute([':uid1' => $userId, ':uid2' => $userId]);
-    $threads = $stmt->fetchAll();
-} catch (Exception $e) {
-}
+/* ─────────────────────────────────────────────
+ * Pobierz dane wątków przez serwis
+ * (zero SQL w widoku — wszystko idzie przez repozytoria)
+ * ───────────────────────────────────────────── */
+$threadData = container()->threadView->getThreadList($userId);
+$threads = $threadData['threads'];
+$threadParticipants = $threadData['threadParticipants'];
 
-/* Uczestnicy wÄ…tkĂłw */
-$threadParticipants = [];
-if (!empty($threads)) {
-    $threadIds = array_column($threads, 'thread_id');
-    $placeholders = implode(',', array_fill(0, count($threadIds), '?'));
-    try {
-        $stmt = $pdo->prepare(
-            "SELECT mtp.thread_id,
-                    CONCAT(u.first_name, ' ', u.surname) AS name,
-                    r.role_name
-             FROM message_thread_participants mtp
-             JOIN users u ON u.user_id  = mtp.user_id
-             JOIN roles r ON r.role_id  = u.role_id
-             WHERE mtp.thread_id IN ($placeholders)
-               AND mtp.user_id != ?
-             ORDER BY mtp.thread_id, u.surname"
-        );
-        $stmt->execute(array_merge($threadIds, [$userId]));
-        foreach ($stmt->fetchAll() as $row) {
-            $threadParticipants[$row['thread_id']][] = $row;
-        }
-    } catch (Exception $e) {
-    }
-}
-
-/* Aktywny wÄ…tek */
+/* Aktywny wątek */
 $activeThreadId = isset($_GET['thread']) ? (int) $_GET['thread'] : 0;
 
-/* Dane aktywnego wÄ…tku */
-$thread = null;
-$messages = [];
-$participants = [];
-
-if ($activeThreadId > 0) {
-    try {
-        $st = $pdo->prepare(
-            'SELECT mt.thread_id, mt.subject, mt.created_at
-             FROM message_threads mt
-             JOIN message_thread_participants mtp
-                  ON mtp.thread_id = mt.thread_id AND mtp.user_id = ?
-             WHERE mt.thread_id = ? LIMIT 1'
-        );
-        $st->execute([$userId, $activeThreadId]);
-        $thread = $st->fetch();
-    } catch (Exception $e) {
-    }
-
-    if ($thread) {
-        /* Oznacz jako przeczytane */
-        try {
-            $pdo->prepare(
-                'UPDATE message_thread_participants
-                 SET last_read_at = NOW()
-                 WHERE thread_id = ? AND user_id = ?'
-            )->execute([$activeThreadId, $userId]);
-        } catch (Exception $e) {
-        }
-
-        /* WiadomoĹ›ci */
-        try {
-            $st = $pdo->prepare(
-                'SELECT
-                    m.message_id,
-                    m.sender_id,
-                    m.content,
-                    m.created_at,
-                    m.deleted_at,
-                    CONCAT(u.first_name, \' \', u.surname) AS sender_name,
-                    r.role_name AS sender_role
-                 FROM messages m
-                 LEFT JOIN users u ON u.user_id = m.sender_id
-                 LEFT JOIN roles r ON r.role_id  = u.role_id
-                 WHERE m.thread_id = ?
-                 ORDER BY m.created_at ASC'
-            );
-            $st->execute([$activeThreadId]);
-            $messages = $st->fetchAll();
-        } catch (Exception $e) {
-        }
-
-        /* Uczestnicy */
-        try {
-            $st = $pdo->prepare(
-                'SELECT
-                    u.user_id,
-                    CONCAT(u.first_name, \' \', u.surname) AS name,
-                    r.role_name,
-                    mtp.joined_at,
-                    mtp.last_read_at
-                 FROM message_thread_participants mtp
-                 JOIN users u ON u.user_id = mtp.user_id
-                 JOIN roles r ON r.role_id = u.role_id
-                 WHERE mtp.thread_id = ?
-                 ORDER BY u.surname'
-            );
-            $st->execute([$activeThreadId]);
-            $participants = $st->fetchAll();
-        } catch (Exception $e) {
-        }
-    }
-}
+$activeData = container()->threadView->getActiveThread($activeThreadId, $userId);
+$thread = $activeData['thread'];
+$messages = $activeData['messages'];
+$participants = $activeData['participants'];
 
 /* Czas sesji */
-$sessionExpiry = null;
-try {
-    $st = $pdo->prepare('SELECT expires_at FROM user_sessions WHERE token = ? AND revoked_at IS NULL LIMIT 1');
-    $st->execute([$_COOKIE['session_token'] ?? '']);
-    $row = $st->fetch();
-    if ($row)
-        $sessionExpiry = $row['expires_at'];
-} catch (Exception $e) {
-}
+$sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['session_token'] ?? '')['sessionExpiry'];
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -794,7 +657,8 @@ try {
             </div>
 
             <div class="msg-search">
-                <input type="text" id="threadSearch" placeholder="Szukaj wÄ…tkĂłwâ€¦" oninput="filterThreads(this.value)">
+                <input type="text" id="threadSearch" placeholder="Szukaj wÄ…tkĂłwâ€¦"
+                    oninput="filterThreads(this.value)">
             </div>
 
             <div class="msg-thread-list" id="threadList">

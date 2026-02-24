@@ -12,8 +12,23 @@ use PDO;
  */
 class PdoPasswordResetRepository implements PasswordResetRepositoryInterface
 {
-    public function __construct(private PDO $pdo)
+    public function __construct(private readonly PDO $pdo)
     {
+    }
+
+    public function beginTransaction(): void
+    {
+        $this->pdo->beginTransaction();
+    }
+
+    public function commit(): void
+    {
+        $this->pdo->commit();
+    }
+
+    public function rollBack(): void
+    {
+        $this->pdo->rollBack();
     }
 
     public function revokeAllForUser(int $userId): void

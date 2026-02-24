@@ -10,25 +10,25 @@ namespace App\Domain;
 class User
 {
     public function __construct(
-        private int $userId,
-        private int $roleId,
-        private int $statusId,
-        private string $firstName,
-        private ?string $secondName,
-        private string $surname,
-        private string $emailAddress,
-        private string $login,
-        private string $password,
-        private string $dateOfBirth,
-        private int $countryId,
-        private string $city,
-        private string $street,
-        private string $buildingNumber,
-        private ?string $apartmentNumber,
-        private ?string $phoneNumber,
-        private int $failedLoginAttempts = 0,
-        private ?string $statusName = null,
-        private ?string $roleName = null,
+        private readonly int $userId,
+        private readonly int $roleId,
+        private readonly int $statusId,
+        private readonly string $firstName,
+        private readonly ?string $secondName,
+        private readonly string $surname,
+        private readonly string $emailAddress,
+        private readonly string $login,
+        private readonly string $password,
+        private readonly string $dateOfBirth,
+        private readonly int $countryId,
+        private readonly string $city,
+        private readonly string $street,
+        private readonly string $buildingNumber,
+        private readonly ?string $apartmentNumber,
+        private readonly ?string $phoneNumber,
+        private readonly int $failedLoginAttempts = 0,
+        private readonly ?string $statusName = null,
+        private readonly ?string $roleName = null,
     ) {
     }
 
@@ -109,6 +109,32 @@ class User
     public function getRoleName(): ?string
     {
         return $this->roleName;
+    }
+
+    // ─── Metody biznesowe ───────────────────────────────
+
+    /** Sprawdza czy konto jest aktywne */
+    public function isActive(): bool
+    {
+        return $this->statusName === 'aktywny';
+    }
+
+    /** Sprawdza czy konto jest zablokowane */
+    public function isBlocked(): bool
+    {
+        return $this->statusName === 'zablokowany';
+    }
+
+    /** Sprawdza czy konto oczekuje na aktywację */
+    public function isPending(): bool
+    {
+        return $this->statusName === 'oczekujący';
+    }
+
+    /** Sprawdza czy konto jest zablokowane na podstawie status_id */
+    public function hasStatusId(int $statusId): bool
+    {
+        return $this->statusId === $statusId;
     }
 
     // ─── Fabryka z tablicy (wiersz PDO) ─────────────────

@@ -19,190 +19,19 @@
         . mb_strtoupper(mb_substr($session['surname'], 0, 1));
     $userId = (int) $session['user_id'];
 
-    $pdo = getDB();
-
     /* ─────────────────────────────────────────────
-     * NIEOBECNOŚCI
-     * Tabela: attendance + attendance_statuses
-     * Filtr: statusy inne niż 'obecny' (nieobecny, spóźniony, usprawiedliwiony)
+     * Pobierz wszystkie dane dashboardu przez serwis
+     * (zero SQL w widoku — wszystko idzie przez repozytoria)
      * ───────────────────────────────────────────── */
-    $absences = [];
-    try {
-        $stmt = $pdo->prepare(
-            'SELECT
-                a.lesson_date,
-                ast.name   AS status_name,
-                a.excuse_note
-             FROM attendance a
-             JOIN attendance_statuses ast ON ast.status_id = a.status_id
-             WHERE a.student_id = ?
-               AND ast.name != \'obecny\'
-             ORDER BY a.lesson_date DESC
-             LIMIT 5'
-        );
-        $stmt->execute([$userId]);
-        $absences = $stmt->fetchAll();
-    } catch (Exception $e) {
-        /* student może nie mieć wpisów lub nie mieć roli ucznia */
-    }
+    $data = container()->dashboard->getDashboardData($userId, $_COOKIE['session_token'] ?? '');
 
-    /* ─────────────────────────────────────────────
-     * OCENY
-     * Tabela: grades + subjects + grade_categories
-     * Kolumny: grade (decimal), graded_at (data), created_at (timestamp)
-     * "Nowa" ocena = dodana w ciągu ostatnich 7 dni
-     * ───────────────────────────────────────────── */
-    $grades = [];
-    try {
-        $stmt = $pdo->prepare(
-            'SELECT
-                g.grade_id,
-                g.grade,
-                g.description,
-                g.graded_at,
-                g.created_at,
-                g.color,
-                s.name          AS subject_name,
-                gc.name         AS category_name,
-                gc.weight,
-                (g.created_at >= NOW() - INTERVAL 7 DAY) AS is_new
-             FROM grades g
-             JOIN subjects s      ON s.subject_id  = g.subject_id
-             LEFT JOIN grade_categories gc ON gc.category_id = g.category_id
-             WHERE g.student_id = ?
-             ORDER BY g.created_at DESC
-             LIMIT 15'
-        );
-        $stmt->execute([$userId]);
-        $grades = $stmt->fetchAll();
-    } catch (Exception $e) {
-        /* brak ocen lub użytkownik nie jest uczniem */
-    }
-
-    /* Grupuj oceny po przedmiocie */
-    $gradesBySubject = [];
-    foreach ($grades as $g) {
-        $gradesBySubject[$g['subject_name']][] = $g;
-    }
-
-    /* ─────────────────────────────────────────────
-     * WIADOMOŚCI – liczba nieprzeczytanych
-     * Model: message_threads → message_thread_participants → messages
-     * Nieprzeczytane = wiadomości w wątkach użytkownika,
-     *   wysłane przez kogoś innego,
-     *   po last_read_at uczestnika (lub w ogóle nieodczytane)
-     * ───────────────────────────────────────────── */
-    $unreadCount = 0;
-    try {
-        $stmt = $pdo->prepare(
-            'SELECT COUNT(*) FROM messages m
-             JOIN message_thread_participants mtp
-                 ON mtp.thread_id = m.thread_id
-                AND mtp.user_id   = ?
-             WHERE m.sender_id != ?
-               AND m.deleted_at  IS NULL
-               AND (
-                   mtp.last_read_at IS NULL
-                   OR m.created_at > mtp.last_read_at
-               )'
-        );
-        $stmt->execute([$userId, $userId]);
-        $unreadCount = (int) $stmt->fetchColumn();
-    } catch (Exception $e) {
-        /* brak wiadomości */
-    }
-
-    /* ─────────────────────────────────────────────
-     * PLAN ZAJĘĆ
-     * Widok: v_current_timetable (aktualny plan)
-     * Łączymy z tabelą students, żeby pobrać class_id ucznia
-     * Pobieramy plan na dziś i jutro (lub pon. jeśli weekend)
-     * ───────────────────────────────────────────── */
-    $todaySchedule = [];
-    $tomorrowSchedule = [];
-    $studentClassId = null;
-
-    $todayDow = (int) date('w');   // 0=Sun, 6=Sat
-    $isWeekend = ($todayDow === 0 || $todayDow === 6);
-
-    // Mapowanie PHP date('w') → days_of_week.day_id (1=Pon … 7=Ndz)
-    $phpToDayId = [0 => 7, 1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5, 6 => 6];
-
-    // Wyznacz day_id na dziś i jutro (pomijamy weekend – szukamy pon.)
-    if (!$isWeekend) {
-        $todayDayId = $phpToDayId[$todayDow];
-        $tomorrowDow = ($todayDow === 5) ? 1 : ($todayDow + 1); // po piątku → poniedziałek
-        $tomorrowDayId = $phpToDayId[$tomorrowDow];
-    } else {
-        $todayDayId = null;
-        $tomorrowDayId = 1; // poniedziałek
-    }
-
-    try {
-        /* Pobierz class_id ucznia */
-        $stmtCls = $pdo->prepare(
-            'SELECT class_id FROM students WHERE user_id = ? LIMIT 1'
-        );
-        $stmtCls->execute([$userId]);
-        $row = $stmtCls->fetch();
-        $studentClassId = $row ? (int) $row['class_id'] : null;
-
-        if ($studentClassId) {
-            /* Plan na dziś */
-            if ($todayDayId) {
-                $stmtT = $pdo->prepare(
-                    'SELECT
-                        vct.lesson_number,
-                        vct.start_hour,
-                        vct.end_hour,
-                        vct.subject_name,
-                        vct.teacher_name,
-                        vct.classroom_name
-                     FROM v_current_timetable vct
-                     WHERE vct.class_id      = ?
-                       AND vct.day_of_week_id = ?
-                     ORDER BY vct.lesson_number ASC'
-                );
-                $stmtT->execute([$studentClassId, $todayDayId]);
-                $todaySchedule = $stmtT->fetchAll();
-            }
-
-            /* Plan na jutro / poniedziałek */
-            $stmtT2 = $pdo->prepare(
-                'SELECT
-                    vct.lesson_number,
-                    vct.start_hour,
-                    vct.end_hour,
-                    vct.subject_name,
-                    vct.teacher_name,
-                    vct.classroom_name
-                 FROM v_current_timetable vct
-                 WHERE vct.class_id      = ?
-                   AND vct.day_of_week_id = ?
-                 ORDER BY vct.lesson_number ASC'
-            );
-            $stmtT2->execute([$studentClassId, $tomorrowDayId]);
-            $tomorrowSchedule = $stmtT2->fetchAll();
-        }
-    } catch (Exception $e) {
-        /* użytkownik nie jest uczniem lub brak planu */
-    }
-
-    /* ─────────────────────────────────────────────
-     * CZAS SESJI
-     * ───────────────────────────────────────────── */
-    $sessionExpiry = null;
-    try {
-        $stmt = $pdo->prepare(
-            'SELECT expires_at FROM user_sessions
-             WHERE token = ? AND revoked_at IS NULL LIMIT 1'
-        );
-        $stmt->execute([$_COOKIE['session_token'] ?? '']);
-        $row = $stmt->fetch();
-        if ($row)
-            $sessionExpiry = $row['expires_at'];
-    } catch (Exception $e) {
-    }
+    $absences = $data['absences'];
+    $gradesBySubject = $data['gradesBySubject'];
+    $unreadCount = $data['unreadCount'];
+    $studentClassId = $data['studentClassId'];
+    $todaySchedule = $data['todaySchedule'];
+    $tomorrowSchedule = $data['tomorrowSchedule'];
+    $sessionExpiry = $data['sessionExpiry'];
 
     /* ─────────────────────────────────────────────
      * POMOCNICZE – etykiety statusów nieobecności
@@ -214,20 +43,9 @@
     ];
 
     $daysOfWeekPL = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
-    $monthNames = [
-        'stycznia',
-        'lutego',
-        'marca',
-        'kwietnia',
-        'maja',
-        'czerwca',
-        'lipca',
-        'sierpnia',
-        'września',
-        'października',
-        'listopada',
-        'grudnia'
-    ];
+
+    $todayDow = (int) date('w');
+    $isWeekend = ($todayDow === 0 || $todayDow === 6);
 
     // Oblicz datę następnego poniedziałku
     $nextMondayDate = null;

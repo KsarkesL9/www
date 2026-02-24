@@ -13,14 +13,15 @@ use App\Repository\UserRepositoryInterface;
  * Serwis resetowania haseł.
  *
  * Zero SQL, zero PDO, zero HTTP.
+ * Transakcje zarządzane wewnętrznie przez repozytorium.
  */
 class PasswordResetService
 {
     public function __construct(
-        private UserRepositoryInterface $userRepo,
-        private PasswordResetRepositoryInterface $resetRepo,
-        private SessionRepositoryInterface $sessionRepo,
-        private LookupRepositoryInterface $lookupRepo,
+        private readonly UserRepositoryInterface $userRepo,
+        private readonly PasswordResetRepositoryInterface $resetRepo,
+        private readonly SessionRepositoryInterface $sessionRepo,
+        private readonly LookupRepositoryInterface $lookupRepo,
     ) {
     }
 
@@ -76,16 +77,24 @@ class PasswordResetService
         $tokenId = $resetToken->getTokenId();
         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
 
-        $this->userRepo->updatePassword($userId, $hashedPassword);
-        $this->resetRepo->markUsed($tokenId);
-        $this->sessionRepo->revokeAllForUser($userId);
+        $this->resetRepo->beginTransaction();
+        try {
+            $this->userRepo->updatePassword($userId, $hashedPassword);
+            $this->resetRepo->markUsed($tokenId);
+            $this->sessionRepo->revokeAllForUser($userId);
 
-        // Aktywuj konto (odblokowuje po zablokowanym koncie)
-        $activeStatusId = $this->lookupRepo->getStatusIdByName('aktywny');
-        if ($activeStatusId !== null) {
-            $this->userRepo->updateStatus($userId, $activeStatusId);
+            // Aktywuj konto (odblokowuje po zablokowanym koncie)
+            $activeStatusId = $this->lookupRepo->getStatusIdByName('aktywny');
+            if ($activeStatusId !== null) {
+                $this->userRepo->updateStatus($userId, $activeStatusId);
+            }
+
+            $this->resetRepo->commit();
+
+            return ['success' => true, 'message' => 'Hasło zostało zmienione. Zaloguj się nowym hasłem.'];
+        } catch (\Exception $e) {
+            $this->resetRepo->rollBack();
+            return ['success' => false, 'message' => 'Błąd podczas zmiany hasła. Spróbuj ponownie.'];
         }
-
-        return ['success' => true, 'message' => 'Hasło zostało zmienione. Zaloguj się nowym hasłem.'];
     }
 }

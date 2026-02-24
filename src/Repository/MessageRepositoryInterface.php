@@ -11,6 +11,15 @@ use App\Domain\Message;
  */
 interface MessageRepositoryInterface
 {
+    /** Rozpoczyna transakcję */
+    public function beginTransaction(): void;
+
+    /** Zatwierdza transakcję */
+    public function commit(): void;
+
+    /** Wycofuje transakcję */
+    public function rollBack(): void;
+
     /** Tworzy wątek — zwraca thread_id */
     public function createThread(?string $subject): int;
 

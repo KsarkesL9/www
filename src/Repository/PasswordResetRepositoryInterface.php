@@ -11,6 +11,15 @@ use App\Domain\ResetToken;
  */
 interface PasswordResetRepositoryInterface
 {
+    /** Rozpoczyna transakcję */
+    public function beginTransaction(): void;
+
+    /** Zatwierdza transakcję */
+    public function commit(): void;
+
+    /** Wycofuje transakcję */
+    public function rollBack(): void;
+
     /** Unieważnia wszystkie aktywne tokeny użytkownika */
     public function revokeAllForUser(int $userId): void;
 

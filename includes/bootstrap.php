@@ -3,24 +3,56 @@
 declare(strict_types=1);
 
 /**
- * Bootstrap aplikacji — ładuje autoloader Composera, konfigurację i tworzy kontener DI.
+ * Bootstrap aplikacji — ładuje autoloader Composera, konfigurację .env i tworzy kontener DI.
  *
  * Każdy plik wejściowy (API handler, strona) dołącza ten plik,
  * aby uzyskać dostęp do serwisów i pomocniczych funkcji HTTP.
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../config/db.php';
+
+// ─── Ładowanie .env ─────────────────────────────────────
+
+(function () {
+    $envFile = __DIR__ . '/../.env';
+    if (!file_exists($envFile)) {
+        return;
+    }
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#') {
+            continue;
+        }
+        if (str_contains($line, '=')) {
+            [$key, $value] = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+            // Usuń otaczające cudzysłowy
+            if (preg_match('/^(["\'])(.*)\\1$/', $value, $m)) {
+                $value = $m[2];
+            }
+            $_ENV[$key] = $value;
+            putenv("$key=$value");
+        }
+    }
+})();
+
+// ─── Import klas ────────────────────────────────────────
 
 use App\Repository\PdoUserRepository;
 use App\Repository\PdoSessionRepository;
 use App\Repository\PdoPasswordResetRepository;
 use App\Repository\PdoMessageRepository;
 use App\Repository\PdoLookupRepository;
+use App\Repository\PdoDashboardRepository;
+use App\Repository\PdoThreadViewRepository;
 use App\Service\AuthService;
 use App\Service\RegistrationService;
 use App\Service\PasswordResetService;
 use App\Service\MessageService;
+use App\Service\DashboardService;
+use App\Service\ThreadViewService;
 
 // ─── PDO (singleton) ────────────────────────────────────
 
@@ -30,10 +62,10 @@ function getDB(): PDO
     if ($pdo === null) {
         $dsn = sprintf(
             'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-            DB_HOST,
-            DB_PORT,
-            DB_NAME,
-            DB_CHARSET
+            $_ENV['DB_HOST'] ?? 'localhost',
+            (int) ($_ENV['DB_PORT'] ?? 3306),
+            $_ENV['DB_NAME'] ?? 'edux',
+            $_ENV['DB_CHARSET'] ?? 'utf8mb4'
         );
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -41,7 +73,12 @@ function getDB(): PDO
             PDO::ATTR_EMULATE_PREPARES => false,
         ];
         try {
-            $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            $pdo = new PDO(
+                $dsn,
+                $_ENV['DB_USER'] ?? 'root',
+                $_ENV['DB_PASS'] ?? '',
+                $options
+            );
         } catch (PDOException $e) {
             http_response_code(500);
             die(json_encode(['success' => false, 'message' => 'Błąd połączenia z bazą danych.']));
@@ -67,12 +104,16 @@ function container(): object
     $resetRepo = new PdoPasswordResetRepository($pdo);
     $messageRepo = new PdoMessageRepository($pdo);
     $lookupRepo = new PdoLookupRepository($pdo);
+    $dashboardRepo = new PdoDashboardRepository($pdo);
+    $threadViewRepo = new PdoThreadViewRepository($pdo);
 
     // Serwisy
     $authService = new AuthService($userRepo, $sessionRepo, $lookupRepo);
     $registrationService = new RegistrationService($userRepo, $lookupRepo);
     $passwordService = new PasswordResetService($userRepo, $resetRepo, $sessionRepo, $lookupRepo);
     $messageService = new MessageService($messageRepo, $userRepo);
+    $dashboardService = new DashboardService($dashboardRepo);
+    $threadViewService = new ThreadViewService($threadViewRepo);
 
     $c = (object) [
         'pdo' => $pdo,
@@ -85,6 +126,8 @@ function container(): object
         'registration' => $registrationService,
         'password' => $passwordService,
         'messages' => $messageService,
+        'dashboard' => $dashboardService,
+        'threadView' => $threadViewService,
     ];
 
     return $c;

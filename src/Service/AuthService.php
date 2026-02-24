@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Domain\User;
 use App\Repository\LookupRepositoryInterface;
 use App\Repository\SessionRepositoryInterface;
 use App\Repository\UserRepositoryInterface;
 
 /**
- * Serwis autoryzacji — logowanie, blokowanie kont, walidacja sessji.
+ * Serwis autoryzacji — logowanie, blokowanie kont, walidacja sesji.
  *
  * Zero SQL, zero PDO, zero $_POST / header() / json_encode().
  */
@@ -19,9 +18,9 @@ class AuthService
     private const MAX_FAILED_ATTEMPTS = 5;
 
     public function __construct(
-        private UserRepositoryInterface $userRepo,
-        private SessionRepositoryInterface $sessionRepo,
-        private LookupRepositoryInterface $lookupRepo,
+        private readonly UserRepositoryInterface $userRepo,
+        private readonly SessionRepositoryInterface $sessionRepo,
+        private readonly LookupRepositoryInterface $lookupRepo,
     ) {
     }
 
@@ -40,26 +39,22 @@ class AuthService
 
         $userId = $user->getUserId();
 
-        // Sprawdź status konta
-        $blockedStatusId = $this->lookupRepo->getStatusIdByName('zablokowany');
-        $pendingStatusId = $this->lookupRepo->getStatusIdByName('oczekujący');
-        $activeStatusId = $this->lookupRepo->getStatusIdByName('aktywny');
-
-        if ($user->getStatusId() === $blockedStatusId) {
+        // Sprawdź status konta — metody biznesowe na encji User
+        if ($user->isBlocked()) {
             return [
                 'success' => false,
                 'message' => 'Konto zostało zablokowane z powodu zbyt wielu nieudanych prób logowania. Skontaktuj się z administratorem lub zresetuj hasło.',
             ];
         }
 
-        if ($user->getStatusId() === $pendingStatusId) {
+        if ($user->isPending()) {
             return [
                 'success' => false,
                 'message' => 'Twoje konto oczekuje na aktywację przez administratora. Skontaktuj się z działem obsługi.',
             ];
         }
 
-        if ($user->getStatusId() !== $activeStatusId) {
+        if (!$user->isActive()) {
             return [
                 'success' => false,
                 'message' => 'Twoje konto jest nieaktywne. Skontaktuj się z administratorem.',
@@ -71,6 +66,7 @@ class AuthService
             $newAttempts = $this->userRepo->incrementFailedLogins($userId);
 
             if ($newAttempts >= self::MAX_FAILED_ATTEMPTS) {
+                $blockedStatusId = $this->lookupRepo->getStatusIdByName('zablokowany');
                 if ($blockedStatusId !== null) {
                     $this->userRepo->updateStatus($userId, $blockedStatusId);
                 }
