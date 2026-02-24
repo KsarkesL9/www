@@ -50,7 +50,7 @@
                                 8 znaków)</span></label>
                         <div style="position:relative;">
                             <input type="password" id="new_password" placeholder="••••••••" required
-                                autocomplete="new-password" oninput="checkStrength(this.value)">
+                                autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
                             <button type="button" onclick="togglePw('new_password')"
                                 style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;">👁</button>
                         </div>
@@ -102,31 +102,11 @@
         </div>
     </div>
 
+    <script src="/assets/js/alerts.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/forms.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/api.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/password.js?v=<?= time() ?>"></script>
     <script>
-        function togglePw(id) {
-            const el = document.getElementById(id);
-            el.type = el.type === 'password' ? 'text' : 'password';
-        }
-
-        function checkStrength(pw) {
-            let score = 0;
-            if (pw.length >= 8) score++;
-            if (pw.length >= 12) score++;
-            if (/[A-Z]/.test(pw)) score++;
-            if (/[0-9]/.test(pw)) score++;
-            if (/[^A-Za-z0-9]/.test(pw)) score++;
-            const levels = ['#f87171', '#fb923c', '#facc15', '#a3e635', '#34d399'];
-            const fill = document.getElementById('pwFill');
-            fill.style.width = (score * 20) + '%';
-            fill.style.background = levels[Math.min(score, 4)];
-        }
-
-        function showAlert(type, msg) {
-            const el = document.getElementById('alert');
-            el.className = 'alert alert-' + type + ' show';
-            el.textContent = msg;
-        }
-
         document.getElementById('resetForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             const token = document.getElementById('token').value.trim();
@@ -142,18 +122,15 @@
             btn.innerHTML = '<span class="spinner"></span> Zmienianie hasła…';
 
             try {
-                const res = await fetch('/api/reset_password.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, new_password: pw, confirm_password: cpw })
+                const data = await apiPost('/api/reset_password.php', {
+                    token, new_password: pw, confirm_password: cpw
                 });
-                const data = await res.json();
 
                 if (data.success) {
                     document.getElementById('formSection').style.display = 'none';
                     document.getElementById('successSection').style.display = 'block';
                     document.getElementById('backLink').style.display = 'none';
-                    document.getElementById('alert').className = 'alert';
+                    clearAlert();
                 } else {
                     showAlert('error', data.message);
                     btn.disabled = false;

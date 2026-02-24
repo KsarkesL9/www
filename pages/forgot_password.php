@@ -90,13 +90,9 @@
         </div>
     </div>
 
+    <script src="/assets/js/alerts.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/api.js?v=<?= time() ?>"></script>
     <script>
-        function showAlert(type, msg) {
-            const el = document.getElementById('alert');
-            el.className = 'alert alert-' + type + ' show';
-            el.textContent = msg;
-        }
-
         let generatedToken = '';
 
         document.getElementById('requestForm').addEventListener('submit', async function (e) {
@@ -111,21 +107,15 @@
             btn.innerHTML = '<span class="spinner"></span> Generowanie…';
 
             try {
-                const res = await fetch('/api/request_reset.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login, email_address: email })
-                });
-                const data = await res.json();
+                const data = await apiPost('/api/request_reset.php', { login, email_address: email });
 
                 if (data.success && data.token) {
                     generatedToken = data.token;
                     document.getElementById('tokenDisplay').textContent = data.token;
                     document.getElementById('step1').style.display = 'none';
                     document.getElementById('step2').style.display = 'block';
-                    document.getElementById('alert').className = 'alert';
+                    clearAlert();
                 } else {
-                    // Even for "not found" we show generic success (security best practice)
                     showAlert('info', data.message);
                     btn.disabled = false;
                     btn.textContent = 'Wygeneruj token';

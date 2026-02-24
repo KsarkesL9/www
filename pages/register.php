@@ -260,136 +260,7 @@
         </div>
     </div>
 
-    <script>
-        // ===== Custom Date Picker =====
-        const MONTHS_PL = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-            'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        let dpState = {
-            viewYear: today.getFullYear(),
-            viewMonth: today.getMonth(),
-            selectedDate: new Date(today)
-        };
-
-        // Wypełnij pole datą dzisiejszą od razu po załadowaniu
-        (function () {
-            const d = today;
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            document.getElementById('date_of_birth').value = `${yyyy}-${mm}-${dd}`;
-            document.getElementById('date_of_birth_display').value = `${dd}.${mm}.${yyyy}`;
-        })();
-
-        function openDatePicker() {
-            if (dpState.selectedDate) {
-                dpState.viewYear = dpState.selectedDate.getFullYear();
-                dpState.viewMonth = dpState.selectedDate.getMonth();
-            }
-            buildSelects();
-            renderGrid();
-            document.getElementById('datepickerOverlay').classList.add('open');
-        }
-
-        function closeDatePicker() {
-            document.getElementById('datepickerOverlay').classList.remove('open');
-        }
-
-        function overlayClick(e) {
-            if (e.target === document.getElementById('datepickerOverlay')) closeDatePicker();
-        }
-
-        function buildSelects() {
-            const mSel = document.getElementById('dpMonthSelect');
-            mSel.innerHTML = MONTHS_PL.map((m, i) =>
-                `<option value="${i}" ${i === dpState.viewMonth ? 'selected' : ''}>${m}</option>`
-            ).join('');
-
-            const ySel = document.getElementById('dpYearSelect');
-            const minYear = today.getFullYear() - 120;
-            const maxYear = today.getFullYear();
-            let yHtml = '';
-            for (let y = maxYear; y >= minYear; y--) {
-                yHtml += `<option value="${y}" ${y === dpState.viewYear ? 'selected' : ''}>${y}</option>`;
-            }
-            ySel.innerHTML = yHtml;
-        }
-
-        function dpMonthChanged() {
-            dpState.viewMonth = parseInt(document.getElementById('dpMonthSelect').value);
-            renderGrid();
-        }
-
-        function dpYearChanged() {
-            dpState.viewYear = parseInt(document.getElementById('dpYearSelect').value);
-            renderGrid();
-        }
-
-        function dpChangeMonth(delta) {
-            dpState.viewMonth += delta;
-            if (dpState.viewMonth > 11) { dpState.viewMonth = 0; dpState.viewYear++; }
-            if (dpState.viewMonth < 0) { dpState.viewMonth = 11; dpState.viewYear--; }
-            buildSelects();
-            renderGrid();
-        }
-
-        function renderGrid() {
-            const grid = document.getElementById('dpGrid');
-            grid.innerHTML = '';
-
-            const firstDay = new Date(dpState.viewYear, dpState.viewMonth, 1);
-            // Poniedziałek=0, ..., Niedziela=6
-            let startDow = firstDay.getDay() - 1;
-            if (startDow < 0) startDow = 6;
-
-            const daysInMonth = new Date(dpState.viewYear, dpState.viewMonth + 1, 0).getDate();
-
-            // Puste komórki przed pierwszym dniem
-            for (let i = 0; i < startDow; i++) {
-                const empty = document.createElement('div');
-                empty.className = 'datepicker-day empty';
-                grid.appendChild(empty);
-            }
-
-            for (let d = 1; d <= daysInMonth; d++) {
-                const date = new Date(dpState.viewYear, dpState.viewMonth, d);
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'datepicker-day';
-                btn.textContent = d;
-
-                if (date > today) {
-                    btn.classList.add('disabled');
-                } else {
-                    if (date.toDateString() === today.toDateString()) btn.classList.add('today');
-                    if (dpState.selectedDate && date.toDateString() === dpState.selectedDate.toDateString()) {
-                        btn.classList.add('selected');
-                    }
-                    btn.addEventListener('click', () => selectDay(date));
-                }
-                grid.appendChild(btn);
-            }
-        }
-
-        function selectDay(date) {
-            dpState.selectedDate = date;
-            document.getElementById('dpConfirmBtn').disabled = false;
-            renderGrid();
-        }
-
-        function confirmDate() {
-            if (!dpState.selectedDate) return;
-            const d = dpState.selectedDate;
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            document.getElementById('date_of_birth').value = `${yyyy}-${mm}-${dd}`;
-            document.getElementById('date_of_birth_display').value = `${dd}.${mm}.${yyyy}`;
-            closeDatePicker();
-        }
-    </script>
+    <script src="/assets/js/datepicker.js?v=<?= time() ?>"></script>
 
     <!-- Success modal -->
     <div id="successModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
@@ -416,6 +287,10 @@
         </div>
     </div>
 
+    <script src="/assets/js/alerts.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/forms.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/api.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/password.js?v=<?= time() ?>"></script>
     <script>
         // ---- State ----
         let roles = [];
@@ -423,15 +298,8 @@
 
         // ---- Init ----
         (async function init() {
-            // Load roles
-            try {
-                const res = await fetch('/api/get_countries.php');
-                // Also load roles from inline PHP data
-            } catch { }
-
             // Load roles from server
             roles = <?php
-            require_once __DIR__ . '/../config/db.php';
             $stmt = getDB()->query('SELECT role_id, role_name FROM roles ORDER BY role_name');
             echo json_encode($stmt->fetchAll());
             ?>;
@@ -472,11 +340,9 @@
         }
 
         function goToStep(n) {
-            // Hide all panels
             document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
             document.getElementById('panel-' + n).style.display = 'block';
 
-            // Update step indicators
             document.querySelectorAll('.step-item').forEach(item => {
                 const s = parseInt(item.dataset.step);
                 item.classList.remove('active', 'done');
@@ -484,11 +350,9 @@
                 if (s === n) item.classList.add('active');
             });
 
-            // Update summary on step 4
             if (n === 4) updateSummary();
-
             currentStep = n;
-            document.getElementById('alert').className = 'alert';
+            clearAlert();
         }
 
         function validateStep(step) {
@@ -540,52 +404,10 @@
                 document.getElementById('date_of_birth').value || '—';
         }
 
-        // ---- Password strength ----
-        function checkPasswordStrength(pw) {
-            let score = 0;
-            if (pw.length >= 8) score++;
-            if (pw.length >= 12) score++;
-            if (/[A-Z]/.test(pw)) score++;
-            if (/[0-9]/.test(pw)) score++;
-            if (/[^A-Za-z0-9]/.test(pw)) score++;
-
-            const fill = document.getElementById('pwFill');
-            const label = document.getElementById('pwLabel');
-            const levels = [
-                { w: '20%', c: '#f87171', l: 'Bardzo słabe' },
-                { w: '40%', c: '#fb923c', l: 'Słabe' },
-                { w: '60%', c: '#facc15', l: 'Średnie' },
-                { w: '80%', c: '#a3e635', l: 'Mocne' },
-                { w: '100%', c: '#34d399', l: 'Bardzo mocne' },
-            ];
-            const lv = levels[Math.min(score, 4)];
-            fill.style.width = lv.w;
-            fill.style.background = lv.c;
-            label.textContent = lv.l;
-            label.style.color = lv.c;
-        }
-
-        function togglePw(id) {
-            const el = document.getElementById(id);
-            el.type = el.type === 'password' ? 'text' : 'password';
-        }
-
-        // ---- Alerts ----
-        function showAlert(type, msg) {
-            const el = document.getElementById('alert');
-            el.className = 'alert alert-' + type + ' show';
-            el.textContent = msg;
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        function clearAlert() {
-            document.getElementById('alert').className = 'alert';
-        }
-
         // ---- Submit ----
         document.getElementById('registerForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            // Validate step 4
             const pw = document.getElementById('password').value;
             const cpw = document.getElementById('password_confirm').value;
             if (pw.length < 8) { showAlert('error', 'Hasło musi mieć minimum 8 znaków.'); return; }
@@ -613,12 +435,7 @@
             };
 
             try {
-                const res = await fetch('/api/register.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
+                const data = await apiPost('/api/register.php', payload);
 
                 if (data.success) {
                     document.getElementById('generatedLogin').textContent = data.login;

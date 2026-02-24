@@ -1,17 +1,16 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../config/db.php';
 $session = requireAuth();
-$userId   = (int) $session['user_id'];
+$userId = (int) $session['user_id'];
 $fullName = htmlspecialchars(trim($session['first_name'] . ' ' . $session['surname']));
 $roleName = htmlspecialchars(ucfirst($session['role_name']));
 $initials = mb_strtoupper(mb_substr($session['first_name'], 0, 1))
-          . mb_strtoupper(mb_substr($session['surname'], 0, 1));
+    . mb_strtoupper(mb_substr($session['surname'], 0, 1));
 $pdo = getDB();
 
-/* ─────────────────────────────────────────────
- * Pobierz wątki użytkownika wraz z metadanymi
- * ───────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * Pobierz wÄ…tki uĹĽytkownika wraz z metadanymi
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 $threads = [];
 try {
     $stmt = $pdo->prepare(
@@ -48,12 +47,13 @@ try {
     );
     $stmt->execute([':uid1' => $userId, ':uid2' => $userId]);
     $threads = $stmt->fetchAll();
-} catch (Exception $e) { }
+} catch (Exception $e) {
+}
 
-/* Uczestnicy wątków */
+/* Uczestnicy wÄ…tkĂłw */
 $threadParticipants = [];
 if (!empty($threads)) {
-    $threadIds    = array_column($threads, 'thread_id');
+    $threadIds = array_column($threads, 'thread_id');
     $placeholders = implode(',', array_fill(0, count($threadIds), '?'));
     try {
         $stmt = $pdo->prepare(
@@ -71,15 +71,16 @@ if (!empty($threads)) {
         foreach ($stmt->fetchAll() as $row) {
             $threadParticipants[$row['thread_id']][] = $row;
         }
-    } catch (Exception $e) { }
+    } catch (Exception $e) {
+    }
 }
 
-/* Aktywny wątek */
-$activeThreadId = isset($_GET['thread']) ? (int)$_GET['thread'] : 0;
+/* Aktywny wÄ…tek */
+$activeThreadId = isset($_GET['thread']) ? (int) $_GET['thread'] : 0;
 
-/* Dane aktywnego wątku */
-$thread       = null;
-$messages     = [];
+/* Dane aktywnego wÄ…tku */
+$thread = null;
+$messages = [];
 $participants = [];
 
 if ($activeThreadId > 0) {
@@ -93,7 +94,8 @@ if ($activeThreadId > 0) {
         );
         $st->execute([$userId, $activeThreadId]);
         $thread = $st->fetch();
-    } catch (Exception $e) { }
+    } catch (Exception $e) {
+    }
 
     if ($thread) {
         /* Oznacz jako przeczytane */
@@ -103,9 +105,10 @@ if ($activeThreadId > 0) {
                  SET last_read_at = NOW()
                  WHERE thread_id = ? AND user_id = ?'
             )->execute([$activeThreadId, $userId]);
-        } catch (Exception $e) { }
+        } catch (Exception $e) {
+        }
 
-        /* Wiadomości */
+        /* WiadomoĹ›ci */
         try {
             $st = $pdo->prepare(
                 'SELECT
@@ -124,7 +127,8 @@ if ($activeThreadId > 0) {
             );
             $st->execute([$activeThreadId]);
             $messages = $st->fetchAll();
-        } catch (Exception $e) { }
+        } catch (Exception $e) {
+        }
 
         /* Uczestnicy */
         try {
@@ -143,7 +147,8 @@ if ($activeThreadId > 0) {
             );
             $st->execute([$activeThreadId]);
             $participants = $st->fetchAll();
-        } catch (Exception $e) { }
+        } catch (Exception $e) {
+        }
     }
 }
 
@@ -153,15 +158,18 @@ try {
     $st = $pdo->prepare('SELECT expires_at FROM user_sessions WHERE token = ? AND revoked_at IS NULL LIMIT 1');
     $st->execute([$_COOKIE['session_token'] ?? '']);
     $row = $st->fetch();
-    if ($row) $sessionExpiry = $row['expires_at'];
-} catch (Exception $e) { }
+    if ($row)
+        $sessionExpiry = $row['expires_at'];
+} catch (Exception $e) {
+}
 ?>
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wiadomości – Edux</title>
+    <title>WiadomoĹ›ci â€“ Edux</title>
     <link rel="stylesheet" href="/assets/css/style.css?v=<?= time() ?>">
     <script src="/assets/js/theme.js?v=<?= time() ?>"></script>
     <style>
@@ -216,7 +224,9 @@ try {
             white-space: nowrap;
         }
 
-        .msg-new-btn:hover { background: var(--gold-light); }
+        .msg-new-btn:hover {
+            background: var(--gold-light);
+        }
 
         .msg-search {
             padding: 0.6rem 1rem;
@@ -236,7 +246,9 @@ try {
             transition: border-color 0.2s;
         }
 
-        .msg-search input:focus { border-color: var(--gold); }
+        .msg-search input:focus {
+            border-color: var(--gold);
+        }
 
         .msg-thread-list {
             overflow-y: auto;
@@ -254,9 +266,20 @@ try {
             position: relative;
         }
 
-        .msg-thread-item:hover { background: rgba(255,255,255,0.03); }
-        .msg-thread-item.active { background: var(--gold-dim); border-left: 3px solid var(--gold); padding-left: calc(1rem - 3px); }
-        .msg-thread-item.unread .msg-thread-subject { color: var(--text); font-weight: 700; }
+        .msg-thread-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .msg-thread-item.active {
+            background: var(--gold-dim);
+            border-left: 3px solid var(--gold);
+            padding-left: calc(1rem - 3px);
+        }
+
+        .msg-thread-item.unread .msg-thread-subject {
+            color: var(--text);
+            font-weight: 700;
+        }
 
         .msg-thread-top {
             display: flex;
@@ -337,7 +360,9 @@ try {
             flex-wrap: wrap;
         }
 
-        .msg-main-meta svg { color: var(--gold); }
+        .msg-main-meta svg {
+            color: var(--gold);
+        }
 
         /* ---- Messages list ---- */
         .msg-messages {
@@ -385,7 +410,7 @@ try {
 
         .msg-bubble-wrap.mine .msg-bubble {
             background: var(--gold-dim);
-            border-color: rgba(233,184,74,0.3);
+            border-color: rgba(233, 184, 74, 0.3);
         }
 
         .msg-bubble-time {
@@ -423,8 +448,14 @@ try {
             line-height: 1.5;
         }
 
-        .msg-reply textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
-        .msg-reply textarea::placeholder { color: rgba(148,163,184,0.4); }
+        .msg-reply textarea:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px var(--gold-dim);
+        }
+
+        .msg-reply textarea::placeholder {
+            color: rgba(148, 163, 184, 0.4);
+        }
 
         .msg-send-btn {
             background: var(--gold);
@@ -441,8 +472,16 @@ try {
             transition: background 0.2s, transform 0.15s;
         }
 
-        .msg-send-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
-        .msg-send-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+        .msg-send-btn:hover {
+            background: var(--gold-light);
+            transform: translateY(-1px);
+        }
+
+        .msg-send-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         /* ---- Empty state ---- */
         .msg-empty {
@@ -455,15 +494,27 @@ try {
             gap: 0.75rem;
         }
 
-        .msg-empty svg { color: var(--navy-border); }
-        .msg-empty-title { font-size: 1rem; font-weight: 600; color: var(--text-muted); }
-        .msg-empty-sub { font-size: 0.82rem; text-align: center; max-width: 260px; }
+        .msg-empty svg {
+            color: var(--navy-border);
+        }
+
+        .msg-empty-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .msg-empty-sub {
+            font-size: 0.82rem;
+            text-align: center;
+            max-width: 260px;
+        }
 
         /* ---- Compose modal ---- */
         .compose-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.55);
+            background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(6px);
             z-index: 500;
             display: flex;
@@ -474,7 +525,10 @@ try {
             transition: opacity 0.25s;
         }
 
-        .compose-overlay.open { opacity: 1; pointer-events: all; }
+        .compose-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
 
         .compose-modal {
             background: var(--navy-card);
@@ -483,7 +537,7 @@ try {
             padding: 2rem;
             width: 560px;
             max-width: 95vw;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
             transform: translateY(20px) scale(0.97);
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex;
@@ -491,7 +545,9 @@ try {
             gap: 1rem;
         }
 
-        .compose-overlay.open .compose-modal { transform: translateY(0) scale(1); }
+        .compose-overlay.open .compose-modal {
+            transform: translateY(0) scale(1);
+        }
 
         .compose-title {
             font-family: 'Playfair Display', serif;
@@ -527,9 +583,15 @@ try {
 
         .compose-modal input:focus,
         .compose-modal select:focus,
-        .compose-modal textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
+        .compose-modal textarea:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px var(--gold-dim);
+        }
 
-        .compose-modal textarea { resize: vertical; min-height: 100px; }
+        .compose-modal textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
 
         .compose-footer {
             display: flex;
@@ -549,7 +611,7 @@ try {
 
         .recipient-tag {
             background: var(--gold-dim);
-            border: 1px solid rgba(233,184,74,0.3);
+            border: 1px solid rgba(233, 184, 74, 0.3);
             border-radius: 20px;
             padding: 0.2rem 0.6rem;
             font-size: 0.78rem;
@@ -570,10 +632,14 @@ try {
             opacity: 0.7;
         }
 
-        .recipient-tag button:hover { opacity: 1; }
+        .recipient-tag button:hover {
+            opacity: 1;
+        }
 
         /* User search dropdown */
-        .user-search-wrap { position: relative; }
+        .user-search-wrap {
+            position: relative;
+        }
 
         .user-dropdown {
             position: absolute;
@@ -587,11 +653,13 @@ try {
             z-index: 100;
             max-height: 200px;
             overflow-y: auto;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
             display: none;
         }
 
-        .user-dropdown.show { display: block; }
+        .user-dropdown.show {
+            display: block;
+        }
 
         .user-dropdown-item {
             padding: 0.6rem 1rem;
@@ -604,8 +672,14 @@ try {
             transition: background 0.15s;
         }
 
-        .user-dropdown-item:hover { background: var(--gold-dim); }
-        .user-dropdown-item small { color: var(--text-muted); font-size: 0.72rem; }
+        .user-dropdown-item:hover {
+            background: var(--gold-dim);
+        }
+
+        .user-dropdown-item small {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+        }
 
         /* Loading state */
         .msg-loading {
@@ -620,11 +694,20 @@ try {
 
         /* Scrollbar */
         .msg-thread-list::-webkit-scrollbar,
-        .msg-messages::-webkit-scrollbar { width: 4px; }
+        .msg-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
         .msg-thread-list::-webkit-scrollbar-track,
-        .msg-messages::-webkit-scrollbar-track { background: transparent; }
+        .msg-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
         .msg-thread-list::-webkit-scrollbar-thumb,
-        .msg-messages::-webkit-scrollbar-thumb { background: var(--navy-border); border-radius: 2px; }
+        .msg-messages::-webkit-scrollbar-thumb {
+            background: var(--navy-border);
+            border-radius: 2px;
+        }
 
         /* Deleted message */
         .msg-bubble.deleted {
@@ -634,7 +717,10 @@ try {
         }
 
         /* Delete button on hover */
-        .msg-bubble-wrap.mine:hover .msg-delete-btn { opacity: 1; }
+        .msg-bubble-wrap.mine:hover .msg-delete-btn {
+            opacity: 1;
+        }
+
         .msg-delete-btn {
             background: none;
             border: none;
@@ -648,546 +734,286 @@ try {
         }
 
         @media (max-width: 768px) {
-            .msg-layout { grid-template-columns: 1fr; }
-            .msg-sidebar { display: none; }
-            .msg-sidebar.mobile-show { display: flex; position: fixed; inset: 0; top: 64px; z-index: 200; }
+            .msg-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .msg-sidebar {
+                display: none;
+            }
+
+            .msg-sidebar.mobile-show {
+                display: flex;
+                position: fixed;
+                inset: 0;
+                top: 64px;
+                z-index: 200;
+            }
         }
     </style>
 </head>
+
 <body>
-<nav class="dashboard-nav">
-    <a href="/pages/dashboard.php" class="brand-logo" style="font-size:1.5rem; text-decoration:none;">Edu<span>x</span></a>
+    <nav class="dashboard-nav">
+        <a href="/pages/dashboard.php" class="brand-logo"
+            style="font-size:1.5rem; text-decoration:none;">Edu<span>x</span></a>
 
-    <div style="display:flex; align-items:center; gap:0.6rem;">
-        <a href="/pages/dashboard.php" class="btn-ghost" style="padding:0.4rem 0.9rem; font-size:0.82rem;">
-            ← Panel główny
-        </a>
-        <span style="font-size:1rem; font-weight:600; color:var(--text);">Wiadomości</span>
-    </div>
-
-    <div class="dash-user-info">
-        <div class="dash-session-badge" id="sessionBadge" title="Pozostały czas sesji">–</div>
-        <div class="dash-avatar"><?= $initials ?></div>
-        <div style="line-height:1.25;">
-            <div style="font-size:0.95rem; font-weight:600; color:var(--text);"><?= $fullName ?></div>
-            <div style="font-size:0.78rem; color:var(--gold);"><?= $roleName ?></div>
-        </div>
-        <button onclick="logout()" class="btn-ghost" style="padding:0.45rem 1rem; font-size:0.88rem;">Wyloguj</button>
-    </div>
-</nav>
-
-<!-- ===== MESSAGES LAYOUT ===== -->
-<div class="msg-layout">
-
-    <!-- SIDEBAR -->
-    <aside class="msg-sidebar" id="sidebar">
-        <div class="msg-sidebar-header">
-            <span class="msg-sidebar-title">Skrzynka</span>
-            <button class="msg-new-btn" onclick="openCompose()">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                </svg>
-                Nowa
-            </button>
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+            <a href="/pages/dashboard.php" class="btn-ghost" style="padding:0.4rem 0.9rem; font-size:0.82rem;">
+                â† Panel gĹ‚Ăłwny
+            </a>
+            <span style="font-size:1rem; font-weight:600; color:var(--text);">WiadomoĹ›ci</span>
         </div>
 
-        <div class="msg-search">
-            <input type="text" id="threadSearch" placeholder="Szukaj wątków…" oninput="filterThreads(this.value)">
+        <div class="dash-user-info">
+            <div class="dash-session-badge" id="sessionBadge" title="PozostaĹ‚y czas sesji">â€“</div>
+            <div class="dash-avatar"><?= $initials ?></div>
+            <div style="line-height:1.25;">
+                <div style="font-size:0.95rem; font-weight:600; color:var(--text);"><?= $fullName ?></div>
+                <div style="font-size:0.78rem; color:var(--gold);"><?= $roleName ?></div>
+            </div>
+            <button onclick="logout()" class="btn-ghost"
+                style="padding:0.45rem 1rem; font-size:0.88rem;">Wyloguj</button>
         </div>
+    </nav>
 
-        <div class="msg-thread-list" id="threadList">
-            <?php if (empty($threads)): ?>
-                <div class="msg-loading" style="padding:2rem 1rem; text-align:center; flex-direction:column; gap:0.4rem;">
-                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--navy-border); margin:0 auto;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+    <!-- ===== MESSAGES LAYOUT ===== -->
+    <div class="msg-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="msg-sidebar" id="sidebar">
+            <div class="msg-sidebar-header">
+                <span class="msg-sidebar-title">Skrzynka</span>
+                <button class="msg-new-btn" onclick="openCompose()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                    <span style="font-size:0.82rem;">Brak wiadomości</span>
-                </div>
-            <?php else: ?>
-                <?php foreach ($threads as $t):
-                    $isUnread  = (int)$t['unread_count'] > 0;
-                    $isActive  = ($t['thread_id'] === $activeThreadId);
-                    $parts     = $threadParticipants[$t['thread_id']] ?? [];
-                    $partNames = implode(', ', array_map(fn($p) => $p['name'], $parts));
-                    $preview   = $t['last_content']
-                        ? mb_substr(strip_tags($t['last_content']), 0, 60) . (mb_strlen($t['last_content']) > 60 ? '…' : '')
-                        : '(brak wiadomości)';
-                    $timeLabel = $t['last_at']
-                        ? (date('Y-m-d', strtotime($t['last_at'])) === date('Y-m-d')
-                            ? date('H:i', strtotime($t['last_at']))
-                            : date('d.m', strtotime($t['last_at'])))
-                        : '';
-                ?>
-                    <div class="msg-thread-item <?= $isActive ? 'active' : '' ?> <?= $isUnread ? 'unread' : '' ?>"
-                         data-thread="<?= $t['thread_id'] ?>"
-                         data-search="<?= htmlspecialchars(strtolower($t['subject'] . ' ' . $partNames)) ?>"
-                         onclick="openThread(<?= $t['thread_id'] ?>)">
-                        <div class="msg-thread-top">
-                            <span class="msg-thread-subject"><?= htmlspecialchars($t['subject'] ?: '(bez tematu)') ?></span>
-                            <div style="display:flex; align-items:center; gap:0.35rem;">
-                                <?php if ($isUnread): ?>
-                                    <span class="msg-unread-dot"></span>
-                                <?php endif; ?>
-                                <span class="msg-thread-time"><?= $timeLabel ?></span>
-                            </div>
-                        </div>
-                        <?php if ($partNames): ?>
-                            <div class="msg-thread-participants"><?= htmlspecialchars($partNames) ?></div>
-                        <?php endif; ?>
-                        <div class="msg-thread-preview"><?= htmlspecialchars($preview) ?></div>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-    </aside>
-
-    <!-- MAIN PANEL -->
-    <main class="msg-main" id="msgMain">
-        <?php if ($activeThreadId > 0): ?>
-
-            <?php if ($thread): ?>
-                <!-- Thread header -->
-                <div class="msg-main-header">
-                    <div class="msg-main-subject"><?= htmlspecialchars($thread['subject'] ?: '(bez tematu)') ?></div>
-                    <div class="msg-main-meta">
-                        <span style="display:flex; align-items:center; gap:0.3rem;">
-                            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                            <?php foreach ($participants as $i => $p): ?>
-                                <span style="<?= $p['user_id'] == $userId ? 'color:var(--gold);' : '' ?>">
-                                    <?= htmlspecialchars($p['name']) ?>
-                                    <span style="color:var(--text-muted); font-size:0.68rem;">(<?= htmlspecialchars($p['role_name']) ?>)</span>
-                                </span>
-                                <?= ($i < count($participants) - 1) ? '<span style="color:var(--navy-border);">·</span>' : '' ?>
-                            <?php endforeach; ?>
-                        </span>
-                        <span style="color:var(--navy-border);">|</span>
-                        <span>Wątek od <?= date('d.m.Y', strtotime($thread['created_at'])) ?></span>
-                        <span style="color:var(--navy-border);">|</span>
-                        <span><?= count($messages) ?> wiad.</span>
-                    </div>
-                </div>
-
-                <!-- Messages -->
-                <div class="msg-messages" id="messagesList">
-                    <?php if (empty($messages)): ?>
-                        <div class="msg-empty" style="flex:1;">
-                            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                            </svg>
-                            <span>Brak wiadomości w tym wątku</span>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($messages as $m):
-                            $isMine   = ($m['sender_id'] == $userId);
-                            $isDeleted = !empty($m['deleted_at']);
-                            $timeStr   = date('d.m.Y H:i', strtotime($m['created_at']));
-                        ?>
-                            <div class="msg-bubble-wrap <?= $isMine ? 'mine' : 'theirs' ?>"
-                                 data-message-id="<?= $m['message_id'] ?>">
-                                <?php if (!$isMine && !$isDeleted): ?>
-                                    <div class="msg-bubble-sender">
-                                        <?= htmlspecialchars($m['sender_name'] ?? 'Nieznany') ?>
-                                        <span style="color:var(--gold); font-size:0.68rem;">(<?= htmlspecialchars($m['sender_role'] ?? '') ?>)</span>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="msg-bubble <?= $isDeleted ? 'deleted' : '' ?>">
-                                    <?= $isDeleted ? 'Wiadomość została usunięta' : nl2br(htmlspecialchars($m['content'])) ?>
-                                </div>
-                                <div class="msg-bubble-time"><?= $timeStr ?></div>
-                                <?php if ($isMine && !$isDeleted): ?>
-                                    <button class="msg-delete-btn"
-                                            onclick="deleteMessage(<?= $m['message_id'] ?>, this)"
-                                            title="Usuń wiadomość">
-                                        Usuń
-                                    </button>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Reply box -->
-                <div class="msg-reply">
-                    <textarea id="replyContent"
-                              placeholder="Napisz odpowiedź…"
-                              rows="2"
-                              onkeydown="replyKeydown(event)"></textarea>
-                    <button class="msg-send-btn" onclick="sendReply()" title="Wyślij (Ctrl+Enter)">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
-                        </svg>
-                    </button>
-                </div>
-
-            <?php else: ?>
-                <div class="msg-empty">
-                    <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
-                    </svg>
-                    <span class="msg-empty-title">Brak dostępu do wątku</span>
-                    <span class="msg-empty-sub">Nie jesteś uczestnikiem tego wątku.</span>
-                </div>
-            <?php endif; ?>
-
-        <?php else: ?>
-            <!-- No thread selected -->
-            <div class="msg-empty">
-                <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
-                <span class="msg-empty-title">Wybierz wątek</span>
-                <span class="msg-empty-sub">Kliknij wątek na liście lub napisz nową wiadomość.</span>
-                <button class="msg-new-btn" onclick="openCompose()" style="margin-top:0.5rem; padding:0.6rem 1.2rem; font-size:0.88rem;">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Nowa wiadomość
+                    Nowa
                 </button>
             </div>
-        <?php endif; ?>
-    </main>
-</div>
 
-<!-- ===== COMPOSE MODAL ===== -->
-<div class="compose-overlay" id="composeOverlay" onclick="overlayClick(event)">
-    <div class="compose-modal">
-        <div class="compose-title">Nowa wiadomość</div>
-
-        <div id="composeAlert" class="alert" style="margin-bottom:0;"></div>
-
-        <div>
-            <label>Temat</label>
-            <input type="text" id="composeSubject" placeholder="Temat wiadomości…" maxlength="255">
-        </div>
-
-        <div>
-            <label>Odbiorcy <span style="color:var(--gold);">*</span></label>
-            <div class="recipient-tags" id="recipientTags"></div>
-            <div class="user-search-wrap">
-                <input type="text" id="recipientSearch"
-                       placeholder="Szukaj po imieniu lub nazwisku…"
-                       oninput="searchUsers(this.value)"
-                       autocomplete="off">
-                <div class="user-dropdown" id="userDropdown"></div>
+            <div class="msg-search">
+                <input type="text" id="threadSearch" placeholder="Szukaj wÄ…tkĂłwâ€¦" oninput="filterThreads(this.value)">
             </div>
-        </div>
 
-        <div>
-            <label>Wiadomość <span style="color:var(--gold);">*</span></label>
-            <textarea id="composeContent" placeholder="Treść wiadomości…" rows="4"></textarea>
-        </div>
+            <div class="msg-thread-list" id="threadList">
+                <?php if (empty($threads)): ?>
+                    <div class="msg-loading"
+                        style="padding:2rem 1rem; text-align:center; flex-direction:column; gap:0.4rem;">
+                        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                            style="color:var(--navy-border); margin:0 auto;">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span style="font-size:0.82rem;">Brak wiadomoĹ›ci</span>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($threads as $t):
+                        $isUnread = (int) $t['unread_count'] > 0;
+                        $isActive = ($t['thread_id'] === $activeThreadId);
+                        $parts = $threadParticipants[$t['thread_id']] ?? [];
+                        $partNames = implode(', ', array_map(fn($p) => $p['name'], $parts));
+                        $preview = $t['last_content']
+                            ? mb_substr(strip_tags($t['last_content']), 0, 60) . (mb_strlen($t['last_content']) > 60 ? 'â€¦' : '')
+                            : '(brak wiadomoĹ›ci)';
+                        $timeLabel = $t['last_at']
+                            ? (date('Y-m-d', strtotime($t['last_at'])) === date('Y-m-d')
+                                ? date('H:i', strtotime($t['last_at']))
+                                : date('d.m', strtotime($t['last_at'])))
+                            : '';
+                        ?>
+                        <div class="msg-thread-item <?= $isActive ? 'active' : '' ?> <?= $isUnread ? 'unread' : '' ?>"
+                            data-thread="<?= $t['thread_id'] ?>"
+                            data-search="<?= htmlspecialchars(strtolower($t['subject'] . ' ' . $partNames)) ?>"
+                            onclick="openThread(<?= $t['thread_id'] ?>)">
+                            <div class="msg-thread-top">
+                                <span class="msg-thread-subject"><?= htmlspecialchars($t['subject'] ?: '(bez tematu)') ?></span>
+                                <div style="display:flex; align-items:center; gap:0.35rem;">
+                                    <?php if ($isUnread): ?>
+                                        <span class="msg-unread-dot"></span>
+                                    <?php endif; ?>
+                                    <span class="msg-thread-time"><?= $timeLabel ?></span>
+                                </div>
+                            </div>
+                            <?php if ($partNames): ?>
+                                <div class="msg-thread-participants"><?= htmlspecialchars($partNames) ?></div>
+                            <?php endif; ?>
+                            <div class="msg-thread-preview"><?= htmlspecialchars($preview) ?></div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </aside>
 
-        <div class="compose-footer">
-            <button class="btn-ghost" onclick="closeCompose()">Anuluj</button>
-            <button class="btn-primary" style="width:auto; padding:0.65rem 1.8rem;" onclick="sendCompose()" id="composeSendBtn">
-                Wyślij
-            </button>
+        <!-- MAIN PANEL -->
+        <main class="msg-main" id="msgMain">
+            <?php if ($activeThreadId > 0): ?>
+
+                <?php if ($thread): ?>
+                    <!-- Thread header -->
+                    <div class="msg-main-header">
+                        <div class="msg-main-subject"><?= htmlspecialchars($thread['subject'] ?: '(bez tematu)') ?></div>
+                        <div class="msg-main-meta">
+                            <span style="display:flex; align-items:center; gap:0.3rem;">
+                                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <?php foreach ($participants as $i => $p): ?>
+                                    <span style="<?= $p['user_id'] == $userId ? 'color:var(--gold);' : '' ?>">
+                                        <?= htmlspecialchars($p['name']) ?>
+                                        <span
+                                            style="color:var(--text-muted); font-size:0.68rem;">(<?= htmlspecialchars($p['role_name']) ?>)</span>
+                                    </span>
+                                    <?= ($i < count($participants) - 1) ? '<span style="color:var(--navy-border);">Â·</span>' : '' ?>
+                                <?php endforeach; ?>
+                            </span>
+                            <span style="color:var(--navy-border);">|</span>
+                            <span>WÄ…tek od <?= date('d.m.Y', strtotime($thread['created_at'])) ?></span>
+                            <span style="color:var(--navy-border);">|</span>
+                            <span><?= count($messages) ?> wiad.</span>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div class="msg-messages" id="messagesList">
+                        <?php if (empty($messages)): ?>
+                            <div class="msg-empty" style="flex:1;">
+                                <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                                <span>Brak wiadomoĹ›ci w tym wÄ…tku</span>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($messages as $m):
+                                $isMine = ($m['sender_id'] == $userId);
+                                $isDeleted = !empty($m['deleted_at']);
+                                $timeStr = date('d.m.Y H:i', strtotime($m['created_at']));
+                                ?>
+                                <div class="msg-bubble-wrap <?= $isMine ? 'mine' : 'theirs' ?>"
+                                    data-message-id="<?= $m['message_id'] ?>">
+                                    <?php if (!$isMine && !$isDeleted): ?>
+                                        <div class="msg-bubble-sender">
+                                            <?= htmlspecialchars($m['sender_name'] ?? 'Nieznany') ?>
+                                            <span
+                                                style="color:var(--gold); font-size:0.68rem;">(<?= htmlspecialchars($m['sender_role'] ?? '') ?>)</span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="msg-bubble <?= $isDeleted ? 'deleted' : '' ?>">
+                                        <?= $isDeleted ? 'WiadomoĹ›Ä‡ zostaĹ‚a usuniÄ™ta' : nl2br(htmlspecialchars($m['content'])) ?>
+                                    </div>
+                                    <div class="msg-bubble-time"><?= $timeStr ?></div>
+                                    <?php if ($isMine && !$isDeleted): ?>
+                                        <button class="msg-delete-btn" onclick="deleteMessage(<?= $m['message_id'] ?>, this)"
+                                            title="UsuĹ„ wiadomoĹ›Ä‡">
+                                            UsuĹ„
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Reply box -->
+                    <div class="msg-reply">
+                        <textarea id="replyContent" placeholder="Napisz odpowiedĹşâ€¦" rows="2"
+                            onkeydown="replyKeydown(event)"></textarea>
+                        <button class="msg-send-btn" onclick="sendReply()" title="WyĹ›lij (Ctrl+Enter)">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                            </svg>
+                        </button>
+                    </div>
+
+                <?php else: ?>
+                    <div class="msg-empty">
+                        <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                        <span class="msg-empty-title">Brak dostÄ™pu do wÄ…tku</span>
+                        <span class="msg-empty-sub">Nie jesteĹ› uczestnikiem tego wÄ…tku.</span>
+                    </div>
+                <?php endif; ?>
+
+            <?php else: ?>
+                <!-- No thread selected -->
+                <div class="msg-empty">
+                    <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span class="msg-empty-title">Wybierz wÄ…tek</span>
+                    <span class="msg-empty-sub">Kliknij wÄ…tek na liĹ›cie lub napisz nowÄ… wiadomoĹ›Ä‡.</span>
+                    <button class="msg-new-btn" onclick="openCompose()"
+                        style="margin-top:0.5rem; padding:0.6rem 1.2rem; font-size:0.88rem;">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Nowa wiadomoĹ›Ä‡
+                    </button>
+                </div>
+            <?php endif; ?>
+        </main>
+    </div>
+
+    <!-- ===== COMPOSE MODAL ===== -->
+    <div class="compose-overlay" id="composeOverlay" onclick="overlayClick(event)">
+        <div class="compose-modal">
+            <div class="compose-title">Nowa wiadomoĹ›Ä‡</div>
+
+            <div id="composeAlert" class="alert" style="margin-bottom:0;"></div>
+
+            <div>
+                <label>Temat</label>
+                <input type="text" id="composeSubject" placeholder="Temat wiadomoĹ›ciâ€¦" maxlength="255">
+            </div>
+
+            <div>
+                <label>Odbiorcy <span style="color:var(--gold);">*</span></label>
+                <div class="recipient-tags" id="recipientTags"></div>
+                <div class="user-search-wrap">
+                    <input type="text" id="recipientSearch" placeholder="Szukaj po imieniu lub nazwiskuâ€¦"
+                        oninput="searchUsers(this.value)" autocomplete="off">
+                    <div class="user-dropdown" id="userDropdown"></div>
+                </div>
+            </div>
+
+            <div>
+                <label>WiadomoĹ›Ä‡ <span style="color:var(--gold);">*</span></label>
+                <textarea id="composeContent" placeholder="TreĹ›Ä‡ wiadomoĹ›ciâ€¦" rows="4"></textarea>
+            </div>
+
+            <div class="compose-footer">
+                <button class="btn-ghost" onclick="closeCompose()">Anuluj</button>
+                <button class="btn-primary" style="width:auto; padding:0.65rem 1.8rem;" onclick="sendCompose()"
+                    id="composeSendBtn">
+                    WyĹ›lij
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const CURRENT_USER_ID  = <?= $userId ?>;
-    const ACTIVE_THREAD_ID = <?= $activeThreadId ?>;
-
-    // ===== Sesja =====
-    <?php if ($sessionExpiry): ?>
-        const sessionExp = new Date('<?= str_replace(' ', 'T', $sessionExpiry) ?>');
-    <?php else: ?>
-        const sessionExp = new Date(Date.now() + 60 * 60 * 1000);
-    <?php endif; ?>
-
-    function updateSession() {
-        const diff = Math.max(0, Math.floor((sessionExp - Date.now()) / 60000));
-        const badge = document.getElementById('sessionBadge');
-        badge.textContent = diff + 'm';
-        if (diff <= 5) {
-            badge.style.borderColor = 'var(--danger)';
-            badge.style.color       = 'var(--danger)';
-            badge.style.background  = 'rgba(248,113,113,0.15)';
-        }
-        if (diff <= 0) window.location.href = '/pages/login.php?msg=session_expired';
-    }
-    updateSession();
-    setInterval(updateSession, 30000);
-
-    async function logout() {
-        try {
-            const res  = await fetch('/api/logout.php', { method: 'POST' });
-            const data = await res.json();
-            window.location.href = data.redirect || '/pages/login.php';
-        } catch { window.location.href = '/pages/login.php'; }
-    }
-
-    // ===== Scroll do dołu wiadomości =====
-    (function scrollToBottom() {
-        const list = document.getElementById('messagesList');
-        if (list) list.scrollTop = list.scrollHeight;
-    })();
-
-    // ===== Otwieranie wątku =====
-    function openThread(threadId) {
-        window.location.href = '/pages/messages.php?thread=' + threadId;
-    }
-
-    // ===== Filtrowanie wątków =====
-    function filterThreads(query) {
-        const q = query.toLowerCase().trim();
-        document.querySelectorAll('.msg-thread-item').forEach(item => {
-            const text = item.dataset.search || '';
-            item.style.display = (!q || text.includes(q)) ? '' : 'none';
-        });
-    }
-
-    // ===== Odpowiedź w wątku =====
-    function replyKeydown(e) {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            sendReply();
-        }
-    }
-
-    async function sendReply() {
-        const content = document.getElementById('replyContent').value.trim();
-        if (!content) return;
-
-        const btn = document.querySelector('.msg-send-btn');
-        btn.disabled = true;
-
-        try {
-            const res  = await fetch('/api/messages/send.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ thread_id: ACTIVE_THREAD_ID, content })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                document.getElementById('replyContent').value = '';
-                appendMessage(data.message);
-                // Aktualizuj podgląd w sidebarze
-                updateSidebarPreview(ACTIVE_THREAD_ID, content);
-            } else {
-                alert(data.message || 'Błąd wysyłania wiadomości.');
-            }
-        } catch {
-            alert('Błąd połączenia z serwerem.');
-        } finally {
-            btn.disabled = false;
-        }
-    }
-
-    function appendMessage(msg) {
-        const list = document.getElementById('messagesList');
-        // Usuń pustą ikonkę jeśli istnieje
-        const empty = list.querySelector('.msg-empty');
-        if (empty) empty.remove();
-
-        const wrap = document.createElement('div');
-        wrap.className = 'msg-bubble-wrap mine';
-        wrap.dataset.messageId = msg.message_id;
-
-        const now = new Date(msg.created_at.replace(' ', 'T'));
-        const timeStr = now.toLocaleDateString('pl-PL', {day:'2-digit', month:'2-digit', year:'numeric'})
-                      + ' ' + now.toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'});
-
-        wrap.innerHTML = `
-            <div class="msg-bubble">${escHtml(msg.content).replace(/\n/g, '<br>')}</div>
-            <div class="msg-bubble-time">${timeStr}</div>
-            <button class="msg-delete-btn" onclick="deleteMessage(${msg.message_id}, this)" title="Usuń wiadomość">Usuń</button>
-        `;
-        list.appendChild(wrap);
-        list.scrollTop = list.scrollHeight;
-    }
-
-    function updateSidebarPreview(threadId, content) {
-        const item = document.querySelector(`.msg-thread-item[data-thread="${threadId}"]`);
-        if (!item) return;
-        const preview = item.querySelector('.msg-thread-preview');
-        if (preview) preview.textContent = content.substring(0, 60) + (content.length > 60 ? '…' : '');
-        const dot = item.querySelector('.msg-unread-dot');
-        if (dot) dot.remove();
-        item.classList.remove('unread');
-        const timeEl = item.querySelector('.msg-thread-time');
-        const now = new Date();
-        if (timeEl) timeEl.textContent = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    }
-
-    // ===== Usuwanie wiadomości =====
-    async function deleteMessage(messageId, btn) {
-        if (!confirm('Usunąć tę wiadomość? Będzie oznaczona jako usunięta dla wszystkich uczestników.')) return;
-
-        try {
-            const res  = await fetch('/api/messages/delete.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message_id: messageId })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                const wrap   = btn.closest('.msg-bubble-wrap');
-                const bubble = wrap.querySelector('.msg-bubble');
-                bubble.classList.add('deleted');
-                bubble.innerHTML = 'Wiadomość została usunięta';
-                btn.remove();
-            } else {
-                alert(data.message || 'Błąd usuwania wiadomości.');
-            }
-        } catch {
-            alert('Błąd połączenia z serwerem.');
-        }
-    }
-
-    // ===== Compose modal =====
-    let selectedRecipients = []; // [{user_id, name}]
-    let searchTimeout = null;
-
-    function openCompose() {
-        selectedRecipients = [];
-        renderRecipientTags();
-        document.getElementById('composeSubject').value  = '';
-        document.getElementById('composeContent').value  = '';
-        document.getElementById('recipientSearch').value = '';
-        document.getElementById('userDropdown').classList.remove('show');
-        document.getElementById('composeAlert').className = 'alert';
-        document.getElementById('composeOverlay').classList.add('open');
-        setTimeout(() => document.getElementById('composeSubject').focus(), 200);
-    }
-
-    function closeCompose() {
-        document.getElementById('composeOverlay').classList.remove('open');
-    }
-
-    function overlayClick(e) {
-        if (e.target === document.getElementById('composeOverlay')) closeCompose();
-    }
-
-    function renderRecipientTags() {
-        const container = document.getElementById('recipientTags');
-        container.innerHTML = selectedRecipients.map(r => `
-            <div class="recipient-tag">
-                ${escHtml(r.name)}
-                <button onclick="removeRecipient(${r.user_id})" title="Usuń">&times;</button>
-            </div>
-        `).join('');
-    }
-
-    function removeRecipient(userId) {
-        selectedRecipients = selectedRecipients.filter(r => r.user_id !== userId);
-        renderRecipientTags();
-    }
-
-    function addRecipient(userId, name) {
-        if (!selectedRecipients.find(r => r.user_id === userId)) {
-            selectedRecipients.push({ user_id: userId, name });
-        }
-        renderRecipientTags();
-        document.getElementById('recipientSearch').value = '';
-        document.getElementById('userDropdown').classList.remove('show');
-    }
-
-    function searchUsers(query) {
-        clearTimeout(searchTimeout);
-        const dropdown = document.getElementById('userDropdown');
-        if (query.trim().length < 2) { dropdown.classList.remove('show'); return; }
-
-        searchTimeout = setTimeout(async () => {
-            try {
-                const res  = await fetch('/api/messages/search_users.php?q=' + encodeURIComponent(query));
-                const data = await res.json();
-
-                if (!data.users || data.users.length === 0) {
-                    dropdown.innerHTML = '<div class="user-dropdown-item" style="color:var(--text-muted);">Brak wyników</div>';
-                    dropdown.classList.add('show');
-                    return;
-                }
-
-                dropdown.innerHTML = data.users
-                    .filter(u => u.user_id !== CURRENT_USER_ID && !selectedRecipients.find(r => r.user_id === u.user_id))
-                    .map(u => `
-                        <div class="user-dropdown-item" onclick="addRecipient(${u.user_id}, ${JSON.stringify(u.full_name)})">
-                            <span>${escHtml(u.full_name)}</span>
-                            <small>${escHtml(u.role_name)}</small>
-                        </div>
-                    `).join('');
-
-                if (!dropdown.innerHTML.trim()) {
-                    dropdown.innerHTML = '<div class="user-dropdown-item" style="color:var(--text-muted);">Brak wyników</div>';
-                }
-                dropdown.classList.add('show');
-            } catch {
-                dropdown.classList.remove('show');
-            }
-        }, 280);
-    }
-
-    // Zamknij dropdown po kliknięciu poza nim
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.user-search-wrap')) {
-            document.getElementById('userDropdown').classList.remove('show');
-        }
-    });
-
-    async function sendCompose() {
-        const subject  = document.getElementById('composeSubject').value.trim();
-        const content  = document.getElementById('composeContent').value.trim();
-        const alertEl  = document.getElementById('composeAlert');
-
-        const showAlert = (type, msg) => {
-            alertEl.className = 'alert alert-' + type + ' show';
-            alertEl.textContent = msg;
-        };
-
-        if (selectedRecipients.length === 0) { showAlert('error', 'Dodaj co najmniej jednego odbiorcę.'); return; }
-        if (!content) { showAlert('error', 'Wpisz treść wiadomości.'); return; }
-
-        const btn = document.getElementById('composeSendBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Wysyłanie…';
-
-        try {
-            const res  = await fetch('/api/messages/create_thread.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    subject,
-                    content,
-                    recipient_ids: selectedRecipients.map(r => r.user_id)
-                })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                closeCompose();
-                window.location.href = '/pages/messages.php?thread=' + data.thread_id;
-            } else {
-                showAlert('error', data.message || 'Błąd wysyłania wiadomości.');
-                btn.disabled = false;
-                btn.textContent = 'Wyślij';
-            }
-        } catch {
-            showAlert('error', 'Błąd połączenia z serwerem.');
-            btn.disabled = false;
-            btn.textContent = 'Wyślij';
-        }
-    }
-
-    // ===== Utils =====
-    function escHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
-
-    // Otwórz compose jeśli ?action=new
-    <?php if (($_GET['action'] ?? '') === 'new'): ?>
-        document.addEventListener('DOMContentLoaded', openCompose);
-    <?php endif; ?>
-</script>
+    <script src="/assets/js/alerts.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/forms.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/api.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/session.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/messages.js?v=<?= time() ?>"></script>
+    <script>
+        const CURRENT_USER_ID = <?= $userId ?>;
+        const ACTIVE_THREAD_ID = <?= $activeThreadId ?>;
+        initSession(<?= $sessionExpiry ? "'" . str_replace(' ', 'T', $sessionExpiry) . "'" : 'null' ?>);
+        <?php if (($_GET['action'] ?? '') === 'new'): ?>
+            document.addEventListener('DOMContentLoaded', openCompose);
+        <?php endif; ?>
+    </script>
 </body>
+
 </html>

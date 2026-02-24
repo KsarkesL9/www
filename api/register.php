@@ -1,16 +1,11 @@
 <?php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 
-header('Content-Type: application/json; charset=utf-8');
+requireMethod('POST');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    jsonResponse(false, 'Niedozwolona metoda.');
-}
+$input = getJsonInput();
 
-$input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-
-// --- Walidacja pól ---
+// Walidacja wymaganych pól
 $required = [
     'role_id',
     'first_name',
@@ -25,10 +20,9 @@ $required = [
     'building_number'
 ];
 
-foreach ($required as $field) {
-    if (empty($input[$field])) {
-        jsonResponse(false, 'Wypełnij wszystkie wymagane pola.', ['field' => $field]);
-    }
+$missingField = validateRequiredFields($input, $required);
+if ($missingField !== null) {
+    jsonResponse(false, 'Wypełnij wszystkie wymagane pola.', ['field' => $missingField]);
 }
 
 $firstName = trim($input['first_name']);
@@ -46,81 +40,58 @@ $buildingNumber = trim($input['building_number']);
 $apartmentNumber = trim($input['apartment_number'] ?? '');
 $phoneNumber = trim($input['phone_number'] ?? '');
 
-// Walidacja e-mail
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+// Walidacja formatu
+if (!validateEmail($email)) {
     jsonResponse(false, 'Podaj prawidłowy adres e-mail.');
 }
-
-// Walidacja hasła
-if (strlen($password) < 8) {
+if (!validatePassword($password)) {
     jsonResponse(false, 'Hasło musi mieć minimum 8 znaków.');
 }
-if ($password !== $passwordConfirm) {
+if (!validatePasswordMatch($password, $passwordConfirm)) {
     jsonResponse(false, 'Hasła nie są identyczne.');
 }
-
-// Walidacja daty urodzenia
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateOfBirth)) {
+if (!validateDateFormat($dateOfBirth)) {
     jsonResponse(false, 'Nieprawidłowy format daty urodzenia.');
 }
 
-$pdo = getDB();
-
-// Sprawdź unikalność e-maila
-$stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE email_address = ?');
-$stmt->execute([$email]);
-if ($stmt->fetchColumn() > 0) {
+// Walidacja danych w bazie
+if (isEmailTaken($email)) {
     jsonResponse(false, 'Podany adres e-mail jest już zarejestrowany.');
 }
-
-// Sprawdź poprawność role_id
-$stmt = $pdo->prepare('SELECT role_id FROM roles WHERE role_id = ?');
-$stmt->execute([$roleId]);
-if (!$stmt->fetch()) {
+if (!roleExists($roleId)) {
     jsonResponse(false, 'Nieprawidłowa rola.');
 }
-
-// Sprawdź poprawność country_id
-$stmt = $pdo->prepare('SELECT country_id FROM countries WHERE country_id = ?');
-$stmt->execute([$countryId]);
-if (!$stmt->fetch()) {
+if (!countryExists($countryId)) {
     jsonResponse(false, 'Nieprawidłowe obywatelstwo.');
 }
 
-// Pobierz status_id dla 'oczekujący'
+// Status oczekujący
 $pendingStatusId = getStatusIdByName('oczekujący');
 if ($pendingStatusId === null) {
     jsonResponse(false, 'Błąd konfiguracji systemu – brak statusu oczekujący.');
 }
 
-// Generuj login
+// Generuj login i hash hasła
 $login = generateLogin($firstName, $surname);
 $passwordHashed = password_hash($password, PASSWORD_BCRYPT);
 
 try {
-    $stmt = $pdo->prepare(
-        'INSERT INTO users
-         (role_id, status_id, first_name, second_name, surname, email_address,
-          login, password, date_of_birth, country_id, city, street,
-          building_number, apartment_number, phone_number, last_password_change)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
-    );
-    $stmt->execute([
-        $roleId,
-        $pendingStatusId,
-        $firstName,
-        $secondName ?: null,
-        $surname,
-        $email,
-        $login,
-        $passwordHashed,
-        $dateOfBirth,
-        $countryId,
-        $city,
-        $street,
-        $buildingNumber,
-        $apartmentNumber ?: null,
-        $phoneNumber ?: null,
+    insertUser([
+        'role_id' => $roleId,
+        'status_id' => $pendingStatusId,
+        'first_name' => $firstName,
+        'second_name' => $secondName ?: null,
+        'surname' => $surname,
+        'email_address' => $email,
+        'login' => $login,
+        'password' => $passwordHashed,
+        'date_of_birth' => $dateOfBirth,
+        'country_id' => $countryId,
+        'city' => $city,
+        'street' => $street,
+        'building_number' => $buildingNumber,
+        'apartment_number' => $apartmentNumber ?: null,
+        'phone_number' => $phoneNumber ?: null,
     ]);
 
     jsonResponse(true, 'Konto zostało pomyślnie utworzone.', ['login' => $login]);

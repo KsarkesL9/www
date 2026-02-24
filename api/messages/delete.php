@@ -1,21 +1,11 @@
 <?php
-require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/bootstrap.php';
 
-header('Content-Type: application/json; charset=utf-8');
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    jsonResponse(false, 'Niedozwolona metoda.');
-}
-
-$session = getSessionFromCookie();
-if (!$session) {
-    http_response_code(401);
-    jsonResponse(false, 'Sesja wygasła.');
-}
+requireMethod('POST');
+$session = requireApiAuth();
 
 $userId = (int) $session['user_id'];
-$input  = json_decode(file_get_contents('php://input'), true) ?? [];
+$input = getJsonInput();
 
 $messageId = (int) ($input['message_id'] ?? 0);
 
@@ -39,7 +29,7 @@ if (!$stmt->fetch()) {
     jsonResponse(false, 'Nie możesz usunąć tej wiadomości.');
 }
 
-// Soft delete – ustawiamy deleted_at
+// Soft delete
 $stmt = $pdo->prepare(
     'UPDATE messages SET deleted_at = NOW() WHERE message_id = ?'
 );

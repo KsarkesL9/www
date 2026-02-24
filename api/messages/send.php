@@ -1,24 +1,14 @@
 <?php
-require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/bootstrap.php';
 
-header('Content-Type: application/json; charset=utf-8');
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    jsonResponse(false, 'Niedozwolona metoda.');
-}
-
-$session = getSessionFromCookie();
-if (!$session) {
-    http_response_code(401);
-    jsonResponse(false, 'Sesja wygasła.');
-}
+requireMethod('POST');
+$session = requireApiAuth();
 
 $userId = (int) $session['user_id'];
-$input  = json_decode(file_get_contents('php://input'), true) ?? [];
+$input = getJsonInput();
 
 $threadId = (int) ($input['thread_id'] ?? 0);
-$content  = trim($input['content'] ?? '');
+$content = trim($input['content'] ?? '');
 
 if (!$threadId) {
     jsonResponse(false, 'Nieprawidłowy wątek.');

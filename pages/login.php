@@ -82,19 +82,10 @@
         </div>
     </div>
 
+    <script src="/assets/js/alerts.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/forms.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/api.js?v=<?= time() ?>"></script>
     <script>
-        function togglePw(id) {
-            const el = document.getElementById(id);
-            el.type = el.type === 'password' ? 'text' : 'password';
-        }
-
-        function showAlert(type, msg) {
-            const el = document.getElementById('alert');
-            el.className = 'alert alert-' + type + ' show';
-            el.textContent = msg;
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
         document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -102,15 +93,10 @@
             btn.innerHTML = '<span class="spinner"></span> Logowanie…';
 
             try {
-                const res = await fetch('/api/login.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        login: document.getElementById('login').value.trim(),
-                        password: document.getElementById('password').value
-                    })
+                const data = await apiPost('/api/login.php', {
+                    login: document.getElementById('login').value.trim(),
+                    password: document.getElementById('password').value
                 });
-                const data = await res.json();
 
                 if (data.success) {
                     showAlert('success', 'Zalogowano! Przekierowuję…');

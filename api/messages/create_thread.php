@@ -1,24 +1,14 @@
 <?php
-require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/bootstrap.php';
 
-header('Content-Type: application/json; charset=utf-8');
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    jsonResponse(false, 'Niedozwolona metoda.');
-}
-
-$session = getSessionFromCookie();
-if (!$session) {
-    http_response_code(401);
-    jsonResponse(false, 'Sesja wygasła.');
-}
+requireMethod('POST');
+$session = requireApiAuth();
 
 $userId = (int) $session['user_id'];
-$input  = json_decode(file_get_contents('php://input'), true) ?? [];
+$input = getJsonInput();
 
-$subject      = trim($input['subject'] ?? '');
-$content      = trim($input['content'] ?? '');
+$subject = trim($input['subject'] ?? '');
+$content = trim($input['content'] ?? '');
 $recipientIds = $input['recipient_ids'] ?? [];
 
 if (empty($content)) {
@@ -81,7 +71,7 @@ try {
     $stmtMsg->execute([$threadId, $userId, $content]);
     $messageId = (int) $pdo->lastInsertId();
 
-    // 4. Zaktualizuj last_read_at nadawcy (nadawca widzi jako przeczytane)
+    // 4. Zaktualizuj last_read_at nadawcy
     $pdo->prepare(
         'UPDATE message_thread_participants
          SET last_read_at = NOW()
@@ -91,7 +81,7 @@ try {
     $pdo->commit();
 
     jsonResponse(true, 'Wiadomość wysłana.', [
-        'thread_id'  => $threadId,
+        'thread_id' => $threadId,
         'message_id' => $messageId,
     ]);
 } catch (Exception $e) {

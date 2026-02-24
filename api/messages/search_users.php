@@ -1,18 +1,8 @@
 <?php
-require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/bootstrap.php';
 
-header('Content-Type: application/json; charset=utf-8');
-
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    jsonResponse(false, 'Niedozwolona metoda.');
-}
-
-$session = getSessionFromCookie();
-if (!$session) {
-    http_response_code(401);
-    jsonResponse(false, 'Sesja wygasła.');
-}
+requireMethod('GET');
+$session = requireApiAuth();
 
 $query = trim($_GET['q'] ?? '');
 
@@ -24,7 +14,6 @@ if (mb_strlen($query) < 2) {
 $pdo = getDB();
 
 try {
-    // Szukaj po imieniu, nazwisku lub loginie wśród aktywnych użytkowników
     $like = '%' . $query . '%';
     $stmt = $pdo->prepare(
         "SELECT
