@@ -8,13 +8,22 @@ use App\Repository\MessageRepositoryInterface;
 use App\Repository\UserRepositoryInterface;
 
 /**
- * Serwis wiadomości — tworzenie wątków, wysyłanie, usuwanie.
+ * @brief Service class for creating, sending, and deleting messages.
  *
- * Zero SQL, zero PDO, zero HTTP.
- * Transakcje zarządzane wewnętrznie przez repozytorium.
+ * @details This service handles all message-related business logic:
+ *          creating new threads, sending replies, soft-deleting messages,
+ *          and searching for users. Database transactions are managed by
+ *          the message repository. The class contains no SQL, no PDO,
+ *          and no HTTP code.
  */
 class MessageService
 {
+    /**
+     * @brief Creates a new MessageService with the required repositories.
+     *
+     * @param MessageRepositoryInterface $messageRepo Repository for message and thread operations.
+     * @param UserRepositoryInterface    $userRepo    Repository for user lookup and validation.
+     */
     public function __construct(
         private readonly MessageRepositoryInterface $messageRepo,
         private readonly UserRepositoryInterface $userRepo,
@@ -22,9 +31,25 @@ class MessageService
     }
 
     /**
-     * Tworzy nowy wątek z pierwszą wiadomością.
+     * @brief Creates a new message thread and sends the first message.
+     *
+     * @details Validates that the content is not empty and that the
+     *          recipient list is not empty. Sanitizes and deduplicates
+     *          recipient IDs and removes the sender's own ID from the list.
+     *          Checks that at least one recipient has an active account.
+     *          Then runs a database transaction to: create the thread row,
+     *          add all participants (sender + valid recipients), insert
+     *          the first message, and update the sender's last-read time.
+     *          If any step fails, the transaction is rolled back.
+     *
+     * @param int         $senderId      The ID of the user sending the message.
+     * @param array       $recipientIds  An array of user IDs to add as recipients.
+     * @param string      $content       The text content of the first message.
+     * @param string|null $subject       The optional subject line for the thread.
      *
      * @return array{success: bool, message: string, thread_id?: int, message_id?: int}
+     *         On success: success=true with thread_id and message_id.
+     *         On failure: success=false with an error message string.
      */
     public function createThread(int $senderId, array $recipientIds, string $content, ?string $subject = null): array
     {
@@ -44,7 +69,7 @@ class MessageService
             return ['success' => false, 'message' => 'Nieprawidłowi odbiorcy.'];
         }
 
-        // Weryfikacja aktywnych odbiorców
+        // Verify that recipients have active accounts
         $validRecipients = $this->userRepo->filterActiveUserIds($recipientIds);
         if (empty($validRecipients)) {
             return ['success' => false, 'message' => 'Żaden z podanych odbiorców nie ma aktywnego konta.'];
@@ -54,13 +79,13 @@ class MessageService
         try {
             $threadId = $this->messageRepo->createThread($subject ?: null);
 
-            // Dodaj uczestników
+            // Add all participants
             $allParticipants = array_unique(array_merge([$senderId], $validRecipients));
             foreach ($allParticipants as $participantId) {
                 $this->messageRepo->addParticipant($threadId, (int) $participantId);
             }
 
-            // Wyślij pierwszą wiadomość
+            // Insert the first message
             $messageId = $this->messageRepo->insertMessage($threadId, $senderId, $content);
             $this->messageRepo->updateLastRead($threadId, $senderId);
 
@@ -79,9 +104,22 @@ class MessageService
     }
 
     /**
-     * Wysyła wiadomość w istniejącym wątku.
+     * @brief Sends a reply message in an existing thread.
      *
-     * @return array{success: bool, message: string, data?: array}
+     * @details Validates that the thread ID is not zero and the content is
+     *          not empty. Checks that the sender is a participant in the
+     *          given thread (returns HTTP 403 status if not). Then runs a
+     *          transaction to insert the message and update the sender's
+     *          last-read timestamp. Loads the saved message and returns it.
+     *          If any step fails, the transaction is rolled back.
+     *
+     * @param int    $senderId  The ID of the user sending the reply.
+     * @param int    $threadId  The ID of the thread to send the reply into.
+     * @param string $content   The text content of the reply message.
+     *
+     * @return array{success: bool, message: string, data?: array|null, status?: int}
+     *         On success: success=true with a 'data' key containing the message array.
+     *         On failure: success=false with an error message. May include 'status' = 403.
      */
     public function sendMessage(int $senderId, int $threadId, string $content): array
     {
@@ -118,9 +156,22 @@ class MessageService
     }
 
     /**
-     * Soft-delete wiadomości.
+     * @brief Soft-deletes a message by setting its deleted_at timestamp.
+     *
+     * @details Validates that the message ID is not zero. Checks that the
+     *          message belongs to the given user and is not already deleted.
+     *          If the check fails, returns an error with HTTP status 403.
+     *          If the check passes, calls softDeleteMessage() on the repository
+     *          which sets the 'deleted_at' column to the current time.
+     *          The message is not removed from the database; it is just marked
+     *          as deleted and shown as a notice to all participants.
+     *
+     * @param int $userId     The ID of the user requesting the deletion.
+     * @param int $messageId  The ID of the message to soft-delete.
      *
      * @return array{success: bool, message: string, status?: int}
+     *         On success: success=true with a confirmation message.
+     *         On failure: success=false with an error. May include 'status' = 403.
      */
     public function deleteMessage(int $userId, int $messageId): array
     {
@@ -138,7 +189,18 @@ class MessageService
     }
 
     /**
-     * Wyszukuje aktywnych użytkowników.
+     * @brief Searches for active users whose name or login matches the query.
+     *
+     * @details If the query string is less than 2 characters long, returns
+     *          an empty array immediately without querying the database.
+     *          Otherwise, calls the user repository's searchActive() method
+     *          and returns the list of matching users.
+     *
+     * @param string $query  The search text. Must be at least 2 characters long.
+     *
+     * @return array A list of matching active user records (up to 15 results).
+     *               Each record has keys: user_id, full_name, login, role_name.
+     *               Returns an empty array if the query is too short.
      */
     public function searchUsers(string $query): array
     {

@@ -1,10 +1,53 @@
-// Zastosuj natychmiast, by uniknąć błysku jasnego/ciemnego tła przed załadowaniem DOM
+/**
+ * @file theme.js
+ * @brief Light and dark theme toggle for the application.
+ *
+ * @details This file manages the visual theme of the page.
+ *          It reads the saved theme from localStorage and
+ *          applies it before the page fully loads to avoid
+ *          a flash of the wrong theme. After the page loads,
+ *          it creates a toggle button so the user can switch
+ *          between light and dark mode.
+ *          The chosen theme is saved in localStorage so it
+ *          is remembered on the next visit.
+ */
+
+/**
+ * @brief Applies the saved theme immediately before the DOM loads.
+ *
+ * @details This is a self-calling function (IIFE) that runs as
+ *          soon as the script is parsed by the browser, before
+ *          the DOM is ready. It reads the 'theme' key from
+ *          localStorage. If the value is 'light', it sets the
+ *          'data-theme' attribute on the root HTML element to
+ *          'light'. This prevents a visible flash of the dark
+ *          background when the user has chosen the light theme.
+ *          If the value is not 'light', nothing is changed and
+ *          the default dark theme is used.
+ *
+ * @returns {void}
+ */
 (function() {
     if (localStorage.getItem('theme') === 'light') {
         document.documentElement.setAttribute('data-theme', 'light');
     }
 })();
 
+/**
+ * @brief Sets up the theme toggle button after the DOM is ready.
+ *
+ * @details This function runs when the 'DOMContentLoaded' event fires.
+ *          It creates a button element with the CSS class 'theme-toggle'
+ *          and appends it to the page body. The button shows a sun icon
+ *          when the current theme is dark (so the user can switch to light)
+ *          and a moon icon when the current theme is light (so the user
+ *          can switch to dark). When the user clicks the button, it:
+ *          - Removes or sets the 'data-theme' attribute on the root element.
+ *          - Saves the new theme name ('light' or 'dark') in localStorage.
+ *          - Updates the button icon to match the new theme.
+ *
+ * @returns {void}
+ */
 document.addEventListener('DOMContentLoaded', () => {
     // Inject button
     const btn = document.createElement('button');
@@ -20,6 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btn.innerHTML = isLight ? moonSvg : sunSvg;
 
+    /**
+     * @brief Handles a click on the theme toggle button.
+     *
+     * @details Reads the current theme from the root element's
+     *          'data-theme' attribute. If the current theme is light,
+     *          it removes the attribute (which activates the dark theme)
+     *          and saves 'dark' to localStorage. If the current theme
+     *          is dark, it sets the attribute to 'light' and saves
+     *          'light' to localStorage. Updates the button icon
+     *          to match the new theme.
+     *
+     * @returns {void}
+     */
     btn.addEventListener('click', () => {
         const currentLight = rootTheme.getAttribute('data-theme') === 'light';
         if (currentLight) {

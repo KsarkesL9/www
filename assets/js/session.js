@@ -1,14 +1,46 @@
 /**
- * session.js — Timer sesji i wylogowanie
+ * @file session.js
+ * @brief Session timer and logout helper functions.
  *
- * Funkcje:
- *   initSession(expiresAt) — uruchamia odliczanie sesji
- *   logout()               — wysyła żądanie wylogowania
+ * @details This file provides two functions:
+ *          one that starts a countdown timer for the user session,
+ *          and one that logs the user out by calling the logout API.
+ *
+ * Functions:
+ *   - initSession(expiresAt)
+ *   - logout()
  */
 
 /**
- * Inicjalizuje timer sesji — aktualizuje badge i przekierowuje po wygaśnięciu
- * @param {string|null} expiresAt — data wygaśnięcia sesji (ISO / MySQL format)
+ * @brief Starts a session countdown timer and shows it in a badge element.
+ *
+ * @details This function calculates how many minutes are left before
+ *          the user session ends. It updates a DOM element with ID
+ *          'sessionBadge' to show the remaining time in minutes.
+ *          The update runs immediately and then repeats every 30 seconds.
+ *
+ *          When less than 5 minutes remain, the badge changes its
+ *          colors to red to warn the user that the session is almost over.
+ *
+ *          When the time runs out (0 minutes left), the function
+ *          redirects the browser to the login page with the query
+ *          parameter 'msg=session_expired'.
+ *
+ *          If the expiresAt parameter is null or empty, the function
+ *          uses one hour from the current time as a fallback value.
+ *
+ *          If the badge element does not exist on the page, the
+ *          function updates nothing but still runs the timer check.
+ *
+ * @param {string|null} expiresAt
+ *        The date and time when the session ends.
+ *        Can be in ISO 8601 format or MySQL format, for example
+ *        '2026-02-24 15:30:00'. Spaces are replaced with 'T'
+ *        before parsing. Pass null to use one hour from now.
+ *
+ * @returns {void}
+ *
+ * @see logout
  */
 function initSession(expiresAt) {
     const sessionExp = expiresAt
@@ -39,7 +71,21 @@ function initSession(expiresAt) {
 }
 
 /**
- * Wylogowuje użytkownika — wywołuje API i przekierowuje na login
+ * @brief Logs out the current user by calling the logout API endpoint.
+ *
+ * @details Sends a POST request to '/api/logout.php'. The server
+ *          removes the session and returns a redirect URL in the
+ *          JSON response. If the server gives a redirect URL,
+ *          the browser goes to that URL. If the request fails
+ *          for any network reason, the browser goes to the
+ *          login page as a fallback.
+ *          This function is async, so it returns a Promise.
+ *
+ * @returns {Promise<void>}
+ *          A Promise that resolves after the browser has been
+ *          redirected to the login page or the redirect URL.
+ *
+ * @see initSession
  */
 async function logout() {
     try {

@@ -8,12 +8,23 @@ use App\Repository\LookupRepositoryInterface;
 use App\Repository\UserRepositoryInterface;
 
 /**
- * Serwis rejestracji użytkowników.
+ * @brief Service class for registering new user accounts.
  *
- * Zero SQL, zero PDO, zero HTTP.
+ * @details This service validates all registration form fields,
+ *          checks that the email is not already taken, verifies
+ *          that the role and country IDs exist in the database,
+ *          generates a unique login name, hashes the password,
+ *          and inserts the new user with a 'pending' status.
+ *          The class contains no SQL, no PDO, and no HTTP code.
  */
 class RegistrationService
 {
+    /**
+     * @brief Creates a new RegistrationService with the required repositories.
+     *
+     * @param UserRepositoryInterface   $userRepo   Repository for inserting users and checking uniqueness.
+     * @param LookupRepositoryInterface $lookupRepo Repository for checking roles, countries, and statuses.
+     */
     public function __construct(
         private UserRepositoryInterface $userRepo,
         private LookupRepositoryInterface $lookupRepo,
@@ -21,13 +32,35 @@ class RegistrationService
     }
 
     /**
-     * Rejestracja nowego użytkownika.
+     * @brief Validates the registration input and creates a new user account.
+     *
+     * @details Checks that all required fields are present and not empty.
+     *          Validates the email format using PHP's filter_var().
+     *          Checks that the password is at least 8 characters and that
+     *          both password fields match. Checks the date of birth format
+     *          (must be YYYY-MM-DD). Verifies that the email is not already
+     *          registered, that the role ID exists, and that the country ID
+     *          exists. Gets the 'pending' status ID for the new account.
+     *          Generates a unique login with generateLogin() and hashes the
+     *          password with bcrypt. Inserts the new user via the repository.
+     *          Returns success with the generated login on success, or an error
+     *          array with a 'field' key pointing to the first invalid field.
+     *
+     * @param array $input An associative array of registration form values.
+     *                     Required keys: role_id, first_name, surname,
+     *                     email_address, password, password_confirm,
+     *                     date_of_birth, country_id, city, street,
+     *                     building_number.
+     *                     Optional keys: second_name, apartment_number,
+     *                     phone_number.
      *
      * @return array{success: bool, message: string, login?: string, field?: string}
+     *         On success: success=true with the 'login' key.
+     *         On failure: success=false with a 'message' and optionally 'field'.
      */
     public function register(array $input): array
     {
-        // Walidacja wymaganych pól
+        // Validate required fields
         $required = [
             'role_id',
             'first_name',
@@ -63,7 +96,7 @@ class RegistrationService
         $apartmentNumber = trim($input['apartment_number'] ?? '');
         $phoneNumber = trim($input['phone_number'] ?? '');
 
-        // Walidacja formatu
+        // Validate format
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return ['success' => false, 'message' => 'Podaj prawidłowy adres e-mail.'];
         }
@@ -77,7 +110,7 @@ class RegistrationService
             return ['success' => false, 'message' => 'Nieprawidłowy format daty urodzenia.'];
         }
 
-        // Walidacja danych w bazie
+        // Validate database data
         if ($this->userRepo->isEmailTaken($email)) {
             return ['success' => false, 'message' => 'Podany adres e-mail jest już zarejestrowany.'];
         }
@@ -88,13 +121,13 @@ class RegistrationService
             return ['success' => false, 'message' => 'Nieprawidłowe obywatelstwo.'];
         }
 
-        // Status oczekujący
+        // Get pending status ID
         $pendingStatusId = $this->lookupRepo->getStatusIdByName('oczekujący');
         if ($pendingStatusId === null) {
             return ['success' => false, 'message' => 'Błąd konfiguracji systemu – brak statusu oczekujący.'];
         }
 
-        // Generuj login
+        // Generate login and hash password
         $login = $this->generateLogin($firstName, $surname);
         $passwordHashed = password_hash($password, PASSWORD_BCRYPT);
 
@@ -120,7 +153,20 @@ class RegistrationService
     }
 
     /**
-     * Generuje unikalny login: inicjały + 6 losowych cyfr.
+     * @brief Generates a unique login name from the user's initials and random digits.
+     *
+     * @details Takes the first character of the first name and the first character
+     *          of the surname, converts them to ASCII (removes accents), and makes
+     *          them lowercase. If both characters are empty after conversion, uses
+     *          the letter 'u' as a base. Appends a zero-padded 6-digit random
+     *          number (000000–999999) to the base. Repeats until a login that
+     *          does not already exist in the database is found.
+     *
+     * @param string $firstName  The user's first name.
+     * @param string $surname    The user's surname.
+     *
+     * @return string A unique login string in the format: {initials}{6 digits},
+     *                for example 'jk042731'.
      */
     private function generateLogin(string $firstName, string $surname): string
     {
