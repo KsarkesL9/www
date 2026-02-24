@@ -7,8 +7,9 @@ namespace App\Repository;
 use App\Domain\User;
 
 /**
- * Implementacja in-memory repozytorium użytkowników — do testów.
- * Przechowuje dane w pamięci, bez bazy danych.
+ * @brief In-memory implementation of the user repository.
+ * 
+ * Used primarily for testing purposes. It stores user data in memory, simulating a database connection.
  */
 class InMemoryUserRepository implements UserRepositoryInterface
 {
@@ -16,6 +17,14 @@ class InMemoryUserRepository implements UserRepositoryInterface
     private array $users = [];
     private int $nextId = 1;
 
+    /**
+     * @brief Finds a user by their login.
+     * 
+     * Iterates over the in-memory array to find a user matching the login.
+     * 
+     * @param string $login The login name.
+     * @return User|null The user object if found, or null otherwise.
+     */
     public function findByLogin(string $login): ?User
     {
         foreach ($this->users as $user) {
@@ -26,6 +35,15 @@ class InMemoryUserRepository implements UserRepositoryInterface
         return null;
     }
 
+    /**
+     * @brief Finds a user by their login and email address.
+     * 
+     * Searches the local list for an account having the exact same login and email.
+     * 
+     * @param string $login The login name.
+     * @param string $email The email address.
+     * @return User|null The matching user object, or null.
+     */
     public function findByLoginAndEmail(string $login, string $email): ?User
     {
         foreach ($this->users as $user) {
@@ -36,6 +54,14 @@ class InMemoryUserRepository implements UserRepositoryInterface
         return null;
     }
 
+    /**
+     * @brief Checks if a specific email exists.
+     * 
+     * Loops through the users to see if any of them own the provided email.
+     * 
+     * @param string $email The email address.
+     * @return bool True if a matching email is found, false otherwise.
+     */
     public function isEmailTaken(string $email): bool
     {
         foreach ($this->users as $user) {
@@ -46,6 +72,14 @@ class InMemoryUserRepository implements UserRepositoryInterface
         return false;
     }
 
+    /**
+     * @brief Creates a new user entry.
+     * 
+     * Adds the generated user data into the memory array with a new incremental ID.
+     * 
+     * @param array $data Assorted user properties.
+     * @return int The ID assigned to the new user.
+     */
     public function insert(array $data): int
     {
         $id = $this->nextId++;
@@ -55,11 +89,27 @@ class InMemoryUserRepository implements UserRepositoryInterface
         return $id;
     }
 
+    /**
+     * @brief Verifies if a user login is occupied.
+     * 
+     * Shorthand to check if a specific login already exists via findByLogin().
+     * 
+     * @param string $login The login to query.
+     * @return bool True if occupied, false otherwise.
+     */
     public function loginExists(string $login): bool
     {
         return $this->findByLogin($login) !== null;
     }
 
+    /**
+     * @brief Increases the failed login attempts.
+     * 
+     * Adds 1 to the failed attempts tracking field of a user.
+     * 
+     * @param int $userId The ID of the targeted user.
+     * @return int The overall failed attempt total.
+     */
     public function incrementFailedLogins(int $userId): int
     {
         if (!isset($this->users[$userId])) {
@@ -77,6 +127,13 @@ class InMemoryUserRepository implements UserRepositoryInterface
         return $newAttempts;
     }
 
+    /**
+     * @brief Restores the failed login count.
+     * 
+     * Flushes the failed login counter for a specific user to 0, usually after successful authentication.
+     * 
+     * @param int $userId The ID of the specific user.
+     */
     public function resetFailedLogins(int $userId): void
     {
         if (!isset($this->users[$userId])) {
@@ -89,6 +146,14 @@ class InMemoryUserRepository implements UserRepositoryInterface
         ));
     }
 
+    /**
+     * @brief Alters an account's overall status.
+     * 
+     * Replaces the current status ID mapped to the user data structure with a new one.
+     * 
+     * @param int $userId The ID to alter.
+     * @param int $statusId The numerical ID matching an application status.
+     */
     public function updateStatus(int $userId, int $statusId): void
     {
         if (!isset($this->users[$userId])) {
@@ -101,6 +166,14 @@ class InMemoryUserRepository implements UserRepositoryInterface
         ));
     }
 
+    /**
+     * @brief Mutates a user's login password.
+     * 
+     * Attaches a new hashed password to the user array and resets the failed login metric.
+     * 
+     * @param int $userId The ID to mutate.
+     * @param string $hashedPassword The hash output.
+     */
     public function updatePassword(int $userId, string $hashedPassword): void
     {
         if (!isset($this->users[$userId])) {
@@ -113,6 +186,15 @@ class InMemoryUserRepository implements UserRepositoryInterface
         ));
     }
 
+    /**
+     * @brief Looks for active users.
+     * 
+     * Scans through the user arrays searching for an 'aktywny' status and keyword matching parts of their names or logins.
+     * 
+     * @param string $query Text query to perform the evaluation against.
+     * @param int $limit Max size of resulting user dataset.
+     * @return array The queried list of data arrays matching the parameters.
+     */
     public function searchActive(string $query, int $limit = 15): array
     {
         $results = [];
@@ -144,6 +226,14 @@ class InMemoryUserRepository implements UserRepositoryInterface
         return $results;
     }
 
+    /**
+     * @brief Retains only active IDs.
+     * 
+     * Discards any ID given from the argument if the corresponding mapping holds an inactive status name.
+     * 
+     * @param array $userIds Valid and potential identifiers.
+     * @return array Subset containing only active people.
+     */
     public function filterActiveUserIds(array $userIds): array
     {
         $result = [];
@@ -157,6 +247,14 @@ class InMemoryUserRepository implements UserRepositoryInterface
 
     // ─── Helper ─────────────────────────────────────────
 
+    /**
+     * @brief Converts User to row mapping.
+     * 
+     * Extracts values internally from a User entity backwards to its array schema layout.
+     * 
+     * @param User $user The entity object.
+     * @return array Formatted hash map with primitive values.
+     */
     private function userToRow(User $user): array
     {
         return [

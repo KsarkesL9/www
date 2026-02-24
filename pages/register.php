@@ -12,19 +12,19 @@
 
 <body>
     <?php
-    require_once __DIR__ . '/../includes/auth.php';
+    require_once __DIR__ . '/../includes/bootstrap.php';
     redirectIfLoggedIn();
     ?>
 
     <div class="auth-wrapper">
 
-        <!-- Brand header - powyżej karty -->
+        <!-- Brand header - Above the card -->
         <div class="brand-header">
             <a href="/" class="brand-logo">Edu<span>x</span></a>
             <p class="brand-tagline">Utwórz nowe konto</p>
         </div>
 
-        <!-- Karta formularza -->
+        <!-- Form card -->
         <div class="auth-card auth-card-wide">
 
             <!-- Step indicator -->
@@ -51,7 +51,7 @@
 
             <form id="registerForm" novalidate>
 
-                <!-- ===== STEP 1: Rola ===== -->
+                <!-- ===== STEP 1: Role ===== -->
                 <div class="step-panel" id="panel-1">
                     <div class="form-group">
                         <label>Rola w systemie <span class="required">*</span></label>
@@ -70,7 +70,7 @@
                     </div>
                 </div>
 
-                <!-- ===== STEP 2: Dane osobowe ===== -->
+                <!-- ===== STEP 2: Personal data ===== -->
                 <div class="step-panel" id="panel-2" style="display:none;">
                     <div class="grid-3">
                         <div class="form-group">
@@ -134,7 +134,7 @@
                     </div>
                 </div>
 
-                <!-- ===== STEP 3: Adres ===== -->
+                <!-- ===== STEP 3: Address ===== -->
                 <div class="step-panel" id="panel-3" style="display:none;">
                     <div class="grid-2">
                         <div class="form-group">
@@ -164,7 +164,7 @@
                     </div>
                 </div>
 
-                <!-- ===== STEP 4: Hasło ===== -->
+                <!-- ===== STEP 4: Password ===== -->
                 <div class="step-panel" id="panel-4" style="display:none;">
                     <div class="form-group">
                         <label>Hasło <span class="required">*</span> <span

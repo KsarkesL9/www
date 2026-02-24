@@ -1,5 +1,5 @@
 ﻿<?php
-require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 $session = requireAuth();
 $userId = (int) $session['user_id'];
 $fullName = htmlspecialchars(trim($session['first_name'] . ' ' . $session['surname']));
@@ -8,14 +8,14 @@ $initials = mb_strtoupper(mb_substr($session['first_name'], 0, 1))
     . mb_strtoupper(mb_substr($session['surname'], 0, 1));
 
 /* ─────────────────────────────────────────────
- * Pobierz dane wątków przez serwis
- * (zero SQL w widoku — wszystko idzie przez repozytoria)
+ * Retrieve thread data via the service
+ * (zero SQL in the view — everything goes through repositories)
  * ───────────────────────────────────────────── */
 $threadData = container()->threadView->getThreadList($userId);
 $threads = $threadData['threads'];
 $threadParticipants = $threadData['threadParticipants'];
 
-/* Aktywny wątek */
+/* Active thread */
 $activeThreadId = isset($_GET['thread']) ? (int) $_GET['thread'] : 0;
 
 $activeData = container()->threadView->getActiveThread($activeThreadId, $userId);
@@ -23,7 +23,7 @@ $thread = $activeData['thread'];
 $messages = $activeData['messages'];
 $participants = $activeData['participants'];
 
-/* Czas sesji */
+/* Session time */
 $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['session_token'] ?? '')['sessionExpiry'];
 ?>
 <!DOCTYPE html>

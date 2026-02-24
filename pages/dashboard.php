@@ -11,7 +11,7 @@
 
 <body>
     <?php
-    require_once __DIR__ . '/../includes/auth.php';
+    require_once __DIR__ . '/../includes/bootstrap.php';
     $session = requireAuth();
     $fullName = htmlspecialchars(trim($session['first_name'] . ' ' . $session['surname']));
     $roleName = htmlspecialchars(ucfirst($session['role_name']));
@@ -20,8 +20,8 @@
     $userId = (int) $session['user_id'];
 
     /* ─────────────────────────────────────────────
-     * Pobierz wszystkie dane dashboardu przez serwis
-     * (zero SQL w widoku — wszystko idzie przez repozytoria)
+     * Retrieve all dashboard data via the service
+     * (zero SQL in the view — everything goes through repositories)
      * ───────────────────────────────────────────── */
     $data = container()->dashboard->getDashboardData($userId, $_COOKIE['session_token'] ?? '');
 
@@ -34,7 +34,7 @@
     $sessionExpiry = $data['sessionExpiry'];
 
     /* ─────────────────────────────────────────────
-     * POMOCNICZE – etykiety statusów nieobecności
+     * HELPERS – absence status labels
      * ───────────────────────────────────────────── */
     $statusColors = [
         'nieobecny' => 'var(--danger)',
@@ -47,7 +47,7 @@
     $todayDow = (int) date('w');
     $isWeekend = ($todayDow === 0 || $todayDow === 6);
 
-    // Oblicz datę następnego poniedziałku
+    // Calculate the date of the next Monday
     $nextMondayDate = null;
     if ($isWeekend) {
         $daysUntilMon = ($todayDow === 6) ? 2 : 1;
@@ -88,10 +88,10 @@
     <div class="dash-main">
         <div class="dash-grid">
 
-            <!-- ===== KOLUMNA 1 (LEWA) ===== -->
+            <!-- ===== COLUMN 1 (LEFT) ===== -->
             <div style="display:flex; flex-direction:column; gap:1.5rem;">
 
-                <!-- Wiadomości -->
+                <!-- Messages -->
                 <div class="dash-card" style="animation-delay:0.05s">
                     <div class="dash-card-header">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -135,7 +135,7 @@
                     </div>
                 </div>
 
-                <!-- Ostatnie nieobecności -->
+                <!-- Recent absences -->
                 <div class="dash-card" style="animation-delay:0.1s">
                     <div class="dash-card-header">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -179,10 +179,10 @@
 
             </div><!-- /col 1 -->
 
-            <!-- ===== KOLUMNA 2 (ŚRODKOWA) ===== -->
+            <!-- ===== COLUMN 2 (MIDDLE) ===== -->
             <div style="display:flex; flex-direction:column; gap:1.5rem;">
 
-                <!-- Szybkie akcje -->
+                <!-- Quick actions -->
                 <div class="dash-card" style="animation-delay:0.08s">
                     <div class="dash-card-body">
                         <a href="/pages/student.php" class="dash-action-btn blue">
@@ -201,7 +201,7 @@
                     </div>
                 </div>
 
-                <!-- Ostatnie oceny -->
+                <!-- Recent grades -->
                 <div class="dash-card" style="animation-delay:0.14s">
                     <div class="dash-card-header">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -221,11 +221,11 @@
                                     <div class="dash-grade-subject"><?= htmlspecialchars($subject) ?></div>
                                     <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
                                         <?php foreach ($subGrades as $g):
-                                            /* Użyj koloru z bazy jeśli ustawiony, wpp. domyślny styl */
+                                            /* Use color from DB if set, otherwise default style */
                                             $gradeColor = (!empty($g['color']) && $g['color'] !== '#000000')
                                                 ? $g['color'] : null;
                                             $isNew = (bool) $g['is_new'];
-                                            /* Formatuj ocenę – usuń .0 dla pełnych liczb */
+                                            /* Format grade - remove .0 for integers */
                                             $gradeDisplay = (fmod((float) $g['grade'], 1) == 0)
                                                 ? (int) $g['grade']
                                                 : $g['grade'];
@@ -260,10 +260,10 @@
 
             </div><!-- /col 2 -->
 
-            <!-- ===== KOLUMNA 3 (PRAWA) ===== -->
+            <!-- ===== COLUMN 3 (RIGHT) ===== -->
             <div style="display:flex; flex-direction:column; gap:1.5rem;">
 
-                <!-- Plan zajęć -->
+                <!-- Schedule -->
                 <div class="dash-card" style="animation-delay:0.12s">
                     <div class="dash-card-header">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -276,7 +276,7 @@
                     <div class="dash-card-body">
 
                         <?php if ($studentClassId === null): ?>
-                            <!-- Użytkownik nie jest uczniem lub nie ma przypisanej klasy -->
+                            <!-- User is not a student or has no assigned class -->
                             <div class="dash-empty">
                                 Brak przypisanej klasy
                             </div>
@@ -287,7 +287,7 @@
                                 Dziś wolne – weekend!
                             </div>
 
-                            <!-- Plan na poniedziałek -->
+                            <!-- Monday schedule -->
                             <div class="dash-schedule-day" style="margin-top:1rem;">
                                 <div class="dash-schedule-label">
                                     PONIEDZIAŁEK (<?= $nextMondayDate ?>)
@@ -318,9 +318,9 @@
                             </div>
 
                         <?php else: ?>
-                            <!-- Dzień roboczy: dziś + jutro -->
+                            <!-- Workday: today + tomorrow -->
 
-                            <!-- DZIŚ -->
+                            <!-- TODAY -->
                             <div class="dash-schedule-day">
                                 <div class="dash-schedule-label">
                                     DZIŚ (<?= $daysOfWeekPL[$todayDow] ?>, <?= date('d.m.Y') ?>)
@@ -350,7 +350,7 @@
                                 <?php endif; ?>
                             </div>
 
-                            <!-- JUTRO -->
+                            <!-- TOMORROW -->
                             <div class="dash-schedule-day">
                                 <div class="dash-schedule-label"><?= $tomorrowLabel ?></div>
                                 <?php if (empty($tomorrowSchedule)): ?>
@@ -389,7 +389,7 @@
 
     <script src="/assets/js/session.js?v=<?= time() ?>"></script>
     <script>
-        // ===== ZEGAR =====
+        // ===== CLOCK =====
         const DAYS_PL = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
         const MONTHS_PL_CLOCK = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
             'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
@@ -406,7 +406,7 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // ===== SESJA =====
+        // ===== SESSION =====
         initSession(<?= $sessionExpiry ? "'" . str_replace(' ', 'T', $sessionExpiry) . "'" : 'null' ?>);
     </script>
 </body>

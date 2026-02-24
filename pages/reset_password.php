@@ -12,20 +12,20 @@
 
 <body>
     <?php
-    require_once __DIR__ . '/../includes/auth.php';
+    require_once __DIR__ . '/../includes/bootstrap.php';
     redirectIfLoggedIn();
     $tokenFromUrl = htmlspecialchars($_GET['token'] ?? '');
     ?>
 
     <div class="auth-wrapper">
 
-        <!-- Brand header - powyżej karty -->
+        <!-- Brand header - Above the card -->
         <div class="brand-header">
             <a href="/" class="brand-logo">Edu<span>x</span></a>
             <p class="brand-tagline">Ustaw nowe hasło</p>
         </div>
 
-        <!-- Karta formularza -->
+        <!-- Form card -->
         <div class="auth-card">
 
             <div id="alert" class="alert"></div>

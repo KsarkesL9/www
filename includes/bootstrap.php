@@ -56,6 +56,13 @@ use App\Service\ThreadViewService;
 
 // ─── PDO (singleton) ────────────────────────────────────
 
+/**
+ * @brief Retrieves the PDO database connection.
+ * 
+ * Provides a singleton instance of the PDO connection object, generating it if it doesn't already exist.
+ * 
+ * @return PDO The active database connection object.
+ */
 function getDB(): PDO
 {
     static $pdo = null;
@@ -89,6 +96,13 @@ function getDB(): PDO
 
 // ─── Kontener serwisów (lazy singletons) ────────────────
 
+/**
+ * @brief Creates and provides a dependency injection container.
+ * 
+ * Instantiates all repositories and services the first time it is called and returns them as a single object graph.
+ * 
+ * @return object The initialized container holding services and repositories.
+ */
 function container(): object
 {
     static $c = null;
@@ -135,6 +149,15 @@ function container(): object
 
 // ─── Pomocnicze funkcje HTTP (bez zmian) ────────────────
 
+/**
+ * @brief Outputs a standard JSON response and exits.
+ * 
+ * Sends a structured HTTP response carrying JSON data back to the client, terminating script execution.
+ * 
+ * @param bool $success Indicates whether the operation succeeded.
+ * @param string $message A descriptive message accompanying the payload.
+ * @param array $data Any extra data points packaged as an array. Default is empty.
+ */
 function jsonResponse(bool $success, string $message, array $data = []): void
 {
     header('Content-Type: application/json; charset=utf-8');
@@ -142,6 +165,13 @@ function jsonResponse(bool $success, string $message, array $data = []): void
     exit;
 }
 
+/**
+ * @brief Enforces an HTTP method constraint.
+ * 
+ * Validates that the current request uses the expected method. Otherwise, answers with a 405 error.
+ * 
+ * @param string $method The required HTTP verb (like 'POST' or 'GET').
+ */
 function requireMethod(string $method): void
 {
     if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method)) {
@@ -150,11 +180,25 @@ function requireMethod(string $method): void
     }
 }
 
+/**
+ * @brief Gathers JSON input from the HTTP request body.
+ * 
+ * Retrieves the raw input steam and parses it to a workable PHP array structure, defaulting to standard POST variables if decoding fails.
+ * 
+ * @return array The array format of the request payload.
+ */
 function getJsonInput(): array
 {
     return json_decode(file_get_contents('php://input'), true) ?? $_POST;
 }
 
+/**
+ * @brief Checks API authentication status.
+ * 
+ * Verifies if there is a valid tracking session cookie present and aborts with a 401 error if not.
+ * 
+ * @return array The decoded session parameters if authentication passes.
+ */
 function requireApiAuth(): array
 {
     $token = $_COOKIE['session_token'] ?? null;
@@ -172,6 +216,13 @@ function requireApiAuth(): array
 
 // ─── Funkcje pomocnicze stron (auth middleware) ─────────
 
+/**
+ * @brief Guard for enforcing authentication on HTML pages.
+ * 
+ * Validates existing cookie tokens to clear page access. Forces a redirection if logic detects an invalid session.
+ * 
+ * @return array The user session details.
+ */
 function requireAuth(): array
 {
     $token = $_COOKIE['session_token'] ?? null;
@@ -187,6 +238,11 @@ function requireAuth(): array
     return $session;
 }
 
+/**
+ * @brief Prevents authenticated users from seeing public forms.
+ * 
+ * Reroutes users directly to the dashboard whenever their existing session acts appropriately.
+ */
 function redirectIfLoggedIn(): void
 {
     $token = $_COOKIE['session_token'] ?? null;
@@ -201,6 +257,13 @@ function redirectIfLoggedIn(): void
 
 // ─── Cookie helpers ─────────────────────────────────────
 
+/**
+ * @brief Sets a structured session cookie.
+ * 
+ * Creates a browser-side tracking cookie enforcing basic security mechanisms.
+ * 
+ * @param string $token The session identifier signature.
+ */
 function setSessionCookie(string $token): void
 {
     setcookie('session_token', $token, [
@@ -211,6 +274,11 @@ function setSessionCookie(string $token): void
     ]);
 }
 
+/**
+ * @brief Dissolves the active user tracking cookie.
+ * 
+ * Issues a deletion order to clean out the browser's token history log.
+ */
 function deleteSessionCookie(): void
 {
     setcookie('session_token', '', [

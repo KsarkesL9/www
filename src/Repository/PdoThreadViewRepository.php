@@ -7,14 +7,31 @@ namespace App\Repository;
 use PDO;
 
 /**
- * Implementacja repozytorium widoku wątków oparta na PDO.
+ * @brief PDO implementation of the thread view repository.
+ * 
+ * Provides methods for retrieving conversation threads and their participants using a PDO database connection.
  */
 class PdoThreadViewRepository implements ThreadViewRepositoryInterface
 {
+    /**
+     * @brief Constructor for the PdoThreadViewRepository.
+     * 
+     * Initializes the repository with a database connection.
+     * 
+     * @param PDO $pdo The PDO database connection instance.
+     */
     public function __construct(private readonly PDO $pdo)
     {
     }
 
+    /**
+     * @brief Gets user threads.
+     * 
+     * Retrieves a list of threads for a specific user, along with the latest message and unread count.
+     * 
+     * @param int $userId The ID of the user.
+     * @return array An array containing thread data.
+     */
     public function getUserThreads(int $userId): array
     {
         $stmt = $this->pdo->prepare(
@@ -53,6 +70,15 @@ class PdoThreadViewRepository implements ThreadViewRepositoryInterface
         return $stmt->fetchAll();
     }
 
+    /**
+     * @brief Gets participants for a set of threads.
+     * 
+     * Retrieves connection details between threads and users, omitting a given user.
+     * 
+     * @param array $threadIds An array of thread identifiers.
+     * @param int $excludeUserId The user ID to skip from the results.
+     * @return array An array of participants grouped by thread ID.
+     */
     public function getParticipantsForThreads(array $threadIds, int $excludeUserId): array
     {
         if (empty($threadIds)) {
@@ -80,6 +106,15 @@ class PdoThreadViewRepository implements ThreadViewRepositoryInterface
         return $result;
     }
 
+    /**
+     * @brief Gets a thread if the user is a participant.
+     * 
+     * Checks if a user belongs to a thread and returns its basic properties.
+     * 
+     * @param int $threadId The ID of the thread.
+     * @param int $userId The ID of the user.
+     * @return array|null The thread details array if authorized, or null if denied.
+     */
     public function getThreadIfParticipant(int $threadId, int $userId): ?array
     {
         $stmt = $this->pdo->prepare(
@@ -94,6 +129,14 @@ class PdoThreadViewRepository implements ThreadViewRepositoryInterface
         return $row ?: null;
     }
 
+    /**
+     * @brief Gets all messages from a thread.
+     * 
+     * Retrieves a list of messages within a conversation containing sender identities.
+     * 
+     * @param int $threadId The ID of the thread.
+     * @return array An array of message records.
+     */
     public function getThreadMessages(int $threadId): array
     {
         $stmt = $this->pdo->prepare(
@@ -115,6 +158,14 @@ class PdoThreadViewRepository implements ThreadViewRepositoryInterface
         return $stmt->fetchAll();
     }
 
+    /**
+     * @brief Gets all participants of a thread.
+     * 
+     * Fetches user data for everyone involved in a given message thread.
+     * 
+     * @param int $threadId The ID of the thread to interrogate.
+     * @return array An array of participant records.
+     */
     public function getThreadParticipants(int $threadId): array
     {
         $stmt = $this->pdo->prepare(
@@ -134,6 +185,14 @@ class PdoThreadViewRepository implements ThreadViewRepositoryInterface
         return $stmt->fetchAll();
     }
 
+    /**
+     * @brief Marks a thread as read by user.
+     * 
+     * Modifies the last_read_at timestamp to indicate a participant saw the latest content.
+     * 
+     * @param int $threadId The ID of the read thread.
+     * @param int $userId The ID of the user who viewed it.
+     */
     public function markThreadAsRead(int $threadId, int $userId): void
     {
         $this->pdo->prepare(

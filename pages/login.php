@@ -12,7 +12,7 @@
 
 <body>
     <?php
-    require_once __DIR__ . '/../includes/auth.php';
+    require_once __DIR__ . '/../includes/bootstrap.php';
     redirectIfLoggedIn();
 
     $msg = $_GET['msg'] ?? '';
@@ -20,13 +20,13 @@
 
     <div class="auth-wrapper">
 
-        <!-- Brand header - powyżej karty -->
+        <!-- Brand header - Above the card -->
         <div class="brand-header">
             <a href="/" class="brand-logo">Edu<span>x</span></a>
             <p class="brand-tagline">Platforma edukacyjna</p>
         </div>
 
-        <!-- Karta formularza -->
+        <!-- Form card -->
         <div class="auth-card">
 
             <?php if ($msg === 'session_expired'): ?>

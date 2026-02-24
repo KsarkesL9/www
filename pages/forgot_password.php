@@ -12,24 +12,24 @@
 
 <body>
     <?php
-    require_once __DIR__ . '/../includes/auth.php';
+    require_once __DIR__ . '/../includes/bootstrap.php';
     redirectIfLoggedIn();
     ?>
 
     <div class="auth-wrapper">
 
-        <!-- Brand header - powyżej karty -->
+        <!-- Brand header - Above the card -->
         <div class="brand-header">
             <a href="/" class="brand-logo">Edu<span>x</span></a>
             <p class="brand-tagline">Odzyskiwanie dostępu</p>
         </div>
 
-        <!-- Karta formularza -->
+        <!-- Form card -->
         <div class="auth-card">
 
             <div id="alert" class="alert"></div>
 
-            <!-- Step 1: Podaj login i email -->
+            <!-- Step 1: Provide login and email -->
             <div id="step1">
                 <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:1.5rem; line-height:1.6;">
                     Podaj swój login i adres e-mail powiązany z kontem. Otrzymasz token do zresetowania hasła.
@@ -52,7 +52,7 @@
                 </form>
             </div>
 
-            <!-- Step 2: Token wygenerowany -->
+            <!-- Step 2: Token generated -->
             <div id="step2" style="display:none;">
                 <div style="text-align:center; margin-bottom:1.5rem;">
                     <div style="font-size:2.5rem;">🔑</div>
