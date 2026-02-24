@@ -3,17 +3,31 @@ require_once __DIR__ . '/../config/db.php';
 
 /**
  * Generuje unikalny login użytkownika
- * Format: pierwsza_litera_imienia + nazwisko + 4_cyfry (np. jkowalski2748)
+ * Format: pierwsza litera imienia + pierwsza litera nazwiska + 6 losowych cyfr
+ * Przykład: jk482931
  */
 function generateLogin(string $firstName, string $surname): string
 {
     $pdo = getDB();
-    $base = mb_strtolower(mb_substr($firstName, 0, 1)) . mb_strtolower(preg_replace('/\s+/', '', $surname));
-    $base = preg_replace('/[^a-z0-9]/', '', iconv('UTF-8', 'ASCII//TRANSLIT', $base));
+
+    // Pobierz inicjały i transliteruj polskie znaki na ASCII
+    $initFirst = iconv('UTF-8', 'ASCII//TRANSLIT', mb_substr($firstName, 0, 1));
+    $initSurname = iconv('UTF-8', 'ASCII//TRANSLIT', mb_substr($surname, 0, 1));
+
+    // Zostaw tylko litery, zamień na małe
+    $base = preg_replace('/[^a-z]/', '', mb_strtolower($initFirst));
+    $base .= preg_replace('/[^a-z]/', '', mb_strtolower($initSurname));
+
+    // Fallback – gdy imię/nazwisko jest puste lub nie zawiera liter
+    if ($base === '') {
+        $base = 'u';
+    }
 
     do {
-        $suffix = str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
+        // 6 losowych cyfr z kryptograficznie bezpiecznego generatora
+        $suffix = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $login = $base . $suffix;
+
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE login = ?');
         $stmt->execute([$login]);
     } while ($stmt->fetchColumn() > 0);

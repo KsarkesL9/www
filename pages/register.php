@@ -397,7 +397,6 @@
         <div style="background:var(--navy-card); border:1px solid var(--navy-border); border-radius:16px;
                 padding:2.5rem 2rem; max-width:420px; width:90%; text-align:center;
                 animation:slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1);">
-            <div style="font-size:3rem; margin-bottom:1rem;">🎉</div>
             <h2 style="font-family:'Playfair Display',serif; color:var(--gold); margin:0 0 0.5rem;">
                 Konto utworzone!
             </h2>
@@ -412,7 +411,7 @@
             </p>
             <a href="/pages/login.php" class="btn-primary"
                 style="display:inline-block; text-decoration:none; padding:0.75rem 2rem; width:auto;">
-                Przejdź do logowania →
+                Przejdź do logowania
             </a>
         </div>
     </div>
