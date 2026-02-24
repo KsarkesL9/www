@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * API: Resetowanie hasła za pomocą tokenu.
+ *
+ * Handler HTTP — zero logiki biznesowej, zero SQL.
+ */
+
 require_once __DIR__ . '/../includes/bootstrap.php';
 
 requireMethod('POST');
@@ -12,38 +19,21 @@ if (empty($token) || empty($newPassword) || empty($confirmPassword)) {
     jsonResponse(false, 'Wypełnij wszystkie pola.');
 }
 
-if (!validatePassword($newPassword)) {
-    jsonResponse(false, 'Hasło musi mieć minimum 8 znaków.');
-}
-
-if (!validatePasswordMatch($newPassword, $confirmPassword)) {
-    jsonResponse(false, 'Hasła nie są identyczne.');
-}
-
-// Weryfikuj token
-$tokenRow = findValidResetToken($token);
-if (!$tokenRow) {
-    jsonResponse(false, 'Token jest nieprawidłowy lub wygasł.');
-}
-
-$userId = (int) $tokenRow['user_id'];
-$tokenId = (int) $tokenRow['token_id'];
-$hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+$pdo = getDB();
 
 try {
-    $pdo = getDB();
     $pdo->beginTransaction();
 
-    updatePassword($userId, $hashedPassword);
-    markTokenUsed($tokenId);
-    revokeAllUserSessions($userId);
-    activateUser($userId);
+    $result = container()->password->resetPassword($token, $newPassword, $confirmPassword);
 
-    $pdo->commit();
+    if ($result['success']) {
+        $pdo->commit();
+        deleteSessionCookie();
+    } else {
+        $pdo->rollBack();
+    }
 
-    deleteSessionCookie();
-
-    jsonResponse(true, 'Hasło zostało zmienione. Zaloguj się nowym hasłem.');
+    jsonResponse($result['success'], $result['message']);
 } catch (Exception $e) {
     $pdo->rollBack();
     jsonResponse(false, 'Błąd podczas zmiany hasła. Spróbuj ponownie.');

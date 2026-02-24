@@ -1,10 +1,17 @@
 <?php
+
+/**
+ * API: Wylogowanie użytkownika.
+ *
+ * Handler HTTP — zero logiki biznesowej.
+ */
+
 require_once __DIR__ . '/../includes/bootstrap.php';
 
 $token = $_COOKIE['session_token'] ?? null;
 
 if ($token) {
-    revokeSession($token);
+    container()->auth->logout($token);
 }
 
 deleteSessionCookie();
