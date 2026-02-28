@@ -303,4 +303,104 @@ class PdoUserRepository implements UserRepositoryInterface
         $stmt->execute($userIds);
         return array_column($stmt->fetchAll(), 'user_id');
     }
+
+    /**
+     * @brief Gets roles for an array of user IDs.
+     * 
+     * @param array $userIds An array of integer user IDs.
+     * @return array An associative array [user_id => 'role_name'].
+     */
+    public function getRolesByUserIds(array $userIds): array
+    {
+        if (empty($userIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT u.user_id, r.role_name
+             FROM users u
+             JOIN roles r ON r.role_id = u.role_id
+             WHERE u.user_id IN ($placeholders)"
+        );
+        $stmt->execute($userIds);
+
+        $roles = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $roles[(int) $row['user_id']] = $row['role_name'];
+        }
+        return $roles;
+    }
+
+    /**
+     * @brief Assigns a user to the corresponding role table.
+     * 
+     * @param int $userId The ID of the user.
+     * @param int $roleId The role ID.
+     */
+    public function assignRoleToUser(int $userId, int $roleId): void
+    {
+        $tableMap = [
+            1 => 'students',
+            2 => 'teachers',
+            3 => 'parents',
+            4 => 'admins'
+        ];
+
+        if (!isset($tableMap[$roleId])) {
+            return;
+        }
+
+        $table = $tableMap[$roleId];
+        $stmt = $this->pdo->prepare("INSERT IGNORE INTO {$table} (user_id) VALUES (?)");
+        $stmt->execute([$userId]);
+    }
+
+    /**
+     * @brief Gets all allowed message recipients for a given sender.
+     * 
+     * @param int $senderId The ID of the sender.
+     * @param int $senderRoleId The role ID of the sender.
+     * @return array List of recipients.
+     */
+    public function getAllowedMessageRecipients(int $senderId, int $senderRoleId): array
+    {
+        $roleFilter = '';
+        if ($senderRoleId === 1) { // Uczeń
+            $roleFilter = 'AND u.role_id IN (2)';
+        } elseif ($senderRoleId === 3) { // Rodzic
+            $roleFilter = 'AND u.role_id IN (2, 4)';
+        }
+
+        $sql = "
+            SELECT 
+                u.user_id,
+                u.role_id,
+                r.role_name,
+                CASE 
+                    WHEN u.role_id = 3 THEN 
+                        CONCAT(
+                            COALESCE(
+                                (SELECT GROUP_CONCAT(CONCAT(s.first_name, ' ', s.surname) SEPARATOR ', ')
+                                 FROM students_parents sp
+                                 JOIN users s ON sp.student_id = s.user_id
+                                 WHERE sp.parent_id = u.user_id),
+                                CONCAT(u.first_name, ' ', u.surname)
+                            ),
+                            ' (rodzic)'
+                        )
+                    ELSE CONCAT(u.first_name, ' ', u.surname)
+                END as full_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.role_id
+            WHERE u.status_id = (SELECT status_id FROM statuses WHERE name = 'aktywny')
+              AND u.user_id != :sender_id
+              $roleFilter
+            ORDER BY u.role_id, u.surname, u.first_name
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':sender_id' => $senderId]);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }

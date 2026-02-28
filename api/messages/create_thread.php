@@ -1,9 +1,16 @@
 <?php
 
 /**
- * API: Tworzenie nowego wątku z wiadomością.
+ * @file
+ * @brief HTTP API handler for creating a new message thread.
  *
- * Handler HTTP — zero logiki biznesowej, zero SQL, zero transakcji.
+ * @details This endpoint processes a POST request to create a new conversation thread
+ *          and send the first message. It ensures the request is authenticated via the 
+ *          API auth handler. Contains zero business logic, zero SQL, and zero transactions.
+ *
+ * @param array $input JSON payload containing 'subject', 'content', and an array of 'recipient_ids'.
+ *
+ * @return void Returns a JSON response containing the success status, message, thread ID, and message ID.
  */
 
 require_once __DIR__ . '/../../includes/bootstrap.php';
@@ -16,7 +23,17 @@ $input = getJsonInput();
 
 $subject = trim($input['subject'] ?? '');
 $content = trim($input['content'] ?? '');
-$recipientIds = $input['recipient_ids'] ?? [];
+$rawRecipientIds = $input['recipient_ids'] ?? [];
+$recipientIds = [];
+// Deobfuscate recipient IDs
+foreach ($rawRecipientIds as $obfuscatedId) {
+    if (is_string($obfuscatedId)) {
+        $realId = deobfuscateId($obfuscatedId);
+        if ($realId !== null) {
+            $recipientIds[] = $realId;
+        }
+    }
+}
 
 $result = container()->messages->createThread($userId, $recipientIds, $content, $subject);
 

@@ -262,234 +262,127 @@ async function deleteMessage(messageId, btn) {
     }
 }
 
-/** @brief List of currently selected recipients for the compose form. */
-let selectedRecipients = [];
-
-/** @brief Timer ID used to delay the user search request (debounce). */
-let searchTimeout = null;
+/** @brief State for recipient picker */
+let pickerAllUsers = [];
+let pickerSelectedIds = new Set();
 
 /**
- * @brief Opens the compose new message modal overlay.
+ * @brief Opens the compose new message modal overlay and loads recipients.
  *
  * @details Resets all compose form fields to empty values.
- *          Clears the list of selected recipients and re-renders
- *          the recipient tags. Hides the user search dropdown.
- *          Clears any alert messages in the compose form.
- *          Adds the 'open' CSS class to the overlay (#composeOverlay)
- *          to show the modal. After a short delay, moves the browser
- *          focus to the subject input field.
+ *          Calls API to load allowed recipients.
+ *          Initializes the dual-pane picker.
  *
  * @returns {void}
- *
- * @see closeCompose
- * @see renderRecipientTags
  */
-function openCompose() {
-    selectedRecipients = [];
-    renderRecipientTags();
+async function openCompose() {
     document.getElementById('composeSubject').value = '';
     document.getElementById('composeContent').value = '';
-    document.getElementById('recipientSearch').value = '';
-    document.getElementById('userDropdown').classList.remove('show');
     document.getElementById('composeAlert').className = 'alert';
+    document.getElementById('pickerSearch').value = '';
+
     document.getElementById('composeOverlay').classList.add('open');
     setTimeout(() => document.getElementById('composeSubject').focus(), 200);
+
+    const loadingWrap = document.getElementById('pickerLoading');
+    const pickerWrap = document.getElementById('recipientPickerWrap');
+
+    loadingWrap.style.display = 'block';
+    loadingWrap.innerHTML = '<span class="spinner"></span> Ładowanie dostępnych odbiorców…';
+    pickerWrap.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/messages/get_recipients.php');
+        const data = await res.json();
+
+        if (!data.success) {
+            loadingWrap.innerHTML = `<div style="color:var(--danger);">${escHtml(data.message)}</div>`;
+            return;
+        }
+
+        pickerAllUsers = data.users || [];
+        pickerSelectedIds.clear();
+
+        // Populate roles dropdown
+        const roles = new Set(pickerAllUsers.map(u => u.role_name));
+        const select = document.getElementById('pickerRoleSelect');
+        select.innerHTML = '<option value="ALL">Wszystkie grupy</option>' + Array.from(roles).map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
+
+        loadingWrap.style.display = 'none';
+        pickerWrap.style.display = 'flex';
+
+        pickerRender();
+    } catch {
+        loadingWrap.innerHTML = '<div style="color:var(--danger);">Błąd pobierania odbiorców.</div>';
+    }
 }
 
-/**
- * @brief Closes the compose new message modal overlay.
- *
- * @details Removes the 'open' CSS class from the compose overlay
- *          element (#composeOverlay), which hides the modal.
- *
- * @returns {void}
- *
- * @see openCompose
- */
-function closeCompose() {
-    document.getElementById('composeOverlay').classList.remove('open');
+/** @brief Re-renders both lists of the dual-pane picker */
+function pickerRender() {
+    pickerFilter();
+    pickerRenderSelected();
 }
 
-/**
- * @brief Closes the compose modal when the user clicks on the background overlay.
- *
- * @details Checks if the click target is exactly the compose overlay
- *          element itself, not a child element. If yes, calls closeCompose()
- *          to close the modal dialog.
- *
- * @param {MouseEvent} e
- *        The mouse click event from the browser.
- *
- * @returns {void}
- *
- * @see closeCompose
- */
-function overlayClick(e) {
-    if (e.target === document.getElementById('composeOverlay')) closeCompose();
-}
+/** @brief Filters and renders the left list (available users) */
+function pickerFilter() {
+    const role = document.getElementById('pickerRoleSelect').value;
+    const search = document.getElementById('pickerSearch').value.toLowerCase();
 
-/**
- * @brief Renders the list of selected recipients as tag elements in the compose form.
- *
- * @details Reads the selectedRecipients array and generates HTML for
- *          each recipient as a small tag div. Each tag shows the
- *          recipient's name (escaped with escHtml) and a remove button
- *          that calls removeRecipient() when clicked. Replaces the
- *          current content of the #recipientTags container element.
- *
- * @returns {void}
- *
- * @see removeRecipient
- * @see escHtml
- */
-function renderRecipientTags() {
-    const container = document.getElementById('recipientTags');
-    container.innerHTML = selectedRecipients.map(r => `
-        <div class="recipient-tag">
-            ${escHtml(r.name)}
-            <button onclick="removeRecipient(${r.user_id})" title="Usuń">&times;</button>
+    const available = pickerAllUsers.filter(u => !pickerSelectedIds.has(u.user_id))
+        .filter(u => role === 'ALL' || u.role_name === role)
+        .filter(u => u.full_name.toLowerCase().includes(search));
+
+    const list = document.getElementById('pickerAvailableList');
+    list.innerHTML = available.map(u => `
+        <div class="picker-item" onclick="this.classList.toggle('active')" data-id="${u.user_id}">
+            <span>${escHtml(u.full_name)}</span>
+            <small>${escHtml(u.role_name)}</small>
         </div>
     `).join('');
 }
 
-/**
- * @brief Removes a recipient from the selected recipients list.
- *
- * @details Filters the selectedRecipients array to remove the entry
- *          with the matching user ID. Then calls renderRecipientTags()
- *          to update the tag display in the compose form.
- *
- * @param {number} userId
- *        The user ID of the recipient to remove.
- *
- * @returns {void}
- *
- * @see renderRecipientTags
- */
-function removeRecipient(userId) {
-    selectedRecipients = selectedRecipients.filter(r => r.user_id !== userId);
-    renderRecipientTags();
+/** @brief Filters and renders the right list (selected users) */
+function pickerRenderSelected() {
+    const selected = pickerAllUsers.filter(u => pickerSelectedIds.has(u.user_id));
+    const list = document.getElementById('pickerSelectedList');
+    list.innerHTML = selected.map(u => `
+        <div class="picker-item" onclick="this.classList.toggle('active')" data-id="${u.user_id}">
+            <span>${escHtml(u.full_name)}</span>
+            <small>${escHtml(u.role_name)}</small>
+        </div>
+    `).join('');
 }
 
-/**
- * @brief Adds a user to the selected recipients list for the compose form.
- *
- * @details Checks if the user is already in the selectedRecipients array.
- *          If not, adds an object with user_id and name to the array.
- *          Then calls renderRecipientTags() to update the tag display.
- *          Clears the recipient search input field and hides the
- *          user search dropdown.
- *
- * @param {number} userId
- *        The numeric user ID of the recipient to add.
- * @param {string} name
- *        The full name of the recipient to display as a tag.
- *
- * @returns {void}
- *
- * @see renderRecipientTags
- * @see removeRecipient
- */
-function addRecipient(userId, name) {
-    if (!selectedRecipients.find(r => r.user_id === userId)) {
-        selectedRecipients.push({ user_id: userId, name });
-    }
-    renderRecipientTags();
-    document.getElementById('recipientSearch').value = '';
-    document.getElementById('userDropdown').classList.remove('show');
+/** @brief Moves active users from left list to right list */
+function pickerAddSelected() {
+    document.querySelectorAll('#pickerAvailableList .picker-item.active').forEach(el => {
+        pickerSelectedIds.add(el.dataset.id);
+    });
+    pickerRender();
 }
 
-/**
- * @brief Searches for active users matching the query and shows results in a dropdown.
- *
- * @details Clears any existing search timeout to reset the debounce timer.
- *          If the query is less than 2 characters, hides the dropdown and returns.
- *          Otherwise, waits 280 milliseconds (debounce delay) before sending a
- *          GET request to '/api/messages/search_users.php' with the query.
- *          If the API returns no users, shows a 'no results' message in
- *          the dropdown. If users are found, filters out the current user
- *          and already-selected recipients, then builds and shows dropdown
- *          items. Clicking an item calls addRecipient(). If the request
- *          fails for any reason, the dropdown is hidden silently.
- *
- * @param {string} query
- *        The text typed by the user in the recipient search field.
- *        The request is only sent if the query is 2 or more characters.
- *
- * @returns {void}
- *
- * @see addRecipient
- * @see escHtml
- */
-function searchUsers(query) {
-    clearTimeout(searchTimeout);
-    const dropdown = document.getElementById('userDropdown');
-    if (query.trim().length < 2) { dropdown.classList.remove('show'); return; }
-
-    searchTimeout = setTimeout(async () => {
-        try {
-            const res = await fetch('/api/messages/search_users.php?q=' + encodeURIComponent(query));
-            const data = await res.json();
-
-            if (!data.users || data.users.length === 0) {
-                dropdown.innerHTML = '<div class="user-dropdown-item" style="color:var(--text-muted);">Brak wyników</div>';
-                dropdown.classList.add('show');
-                return;
-            }
-
-            dropdown.innerHTML = data.users
-                .filter(u => u.user_id !== CURRENT_USER_ID && !selectedRecipients.find(r => r.user_id === u.user_id))
-                .map(u => `
-                    <div class="user-dropdown-item" onclick="addRecipient(${u.user_id}, ${JSON.stringify(u.full_name)})">
-                        <span>${escHtml(u.full_name)}</span>
-                        <small>${escHtml(u.role_name)}</small>
-                    </div>
-                `).join('');
-
-            if (!dropdown.innerHTML.trim()) {
-                dropdown.innerHTML = '<div class="user-dropdown-item" style="color:var(--text-muted);">Brak wyników</div>';
-            }
-            dropdown.classList.add('show');
-        } catch {
-            dropdown.classList.remove('show');
-        }
-    }, 280);
+/** @brief Moves active users from right list back to left list */
+function pickerRemoveSelected() {
+    document.querySelectorAll('#pickerSelectedList .picker-item.active').forEach(el => {
+        pickerSelectedIds.delete(el.dataset.id);
+    });
+    pickerRender();
 }
-
-// Close the user search dropdown when clicking outside it
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.user-search-wrap')) {
-        const dd = document.getElementById('userDropdown');
-        if (dd) dd.classList.remove('show');
-    }
-});
 
 /**
  * @brief Sends a new message thread from the compose modal form.
  *
  * @details Reads the subject and content from the compose form inputs.
- *          Validates that at least one recipient has been selected and
- *          that the content is not empty. If validation fails, shows
- *          an error alert inside the compose modal and returns.
- *          If valid, disables the send button and shows a loading spinner.
- *          Sends the subject, content, and array of recipient IDs to
- *          '/api/messages/create_thread.php' using apiPost(). On success,
- *          closes the compose modal and redirects to the new thread page.
- *          On failure, shows an error alert in the compose modal and
- *          re-enables the send button.
- *
- * @returns {Promise<void>}
- *          A Promise that resolves when the API call is finished.
- *
- * @see closeCompose
- * @see showAlert
- * @see apiPost
+ *          Gathers selected checkbox recipient IDs.
+ *          Sends them to '/api/messages/create_thread.php' API.
  */
 async function sendCompose() {
     const subject = document.getElementById('composeSubject').value.trim();
     const content = document.getElementById('composeContent').value.trim();
 
-    if (selectedRecipients.length === 0) { showAlert('error', 'Dodaj co najmniej jednego odbiorcę.', 'composeAlert'); return; }
+    const selectedIds = Array.from(pickerSelectedIds);
+
+    if (selectedIds.length === 0) { showAlert('error', 'Dodaj co najmniej jednego odbiorcę.', 'composeAlert'); return; }
     if (!content) { showAlert('error', 'Wpisz treść wiadomości.', 'composeAlert'); return; }
 
     const btn = document.getElementById('composeSendBtn');
@@ -500,7 +393,7 @@ async function sendCompose() {
         const data = await apiPost('/api/messages/create_thread.php', {
             subject,
             content,
-            recipient_ids: selectedRecipients.map(r => r.user_id)
+            recipient_ids: selectedIds
         });
 
         if (data.success) {
@@ -516,4 +409,17 @@ async function sendCompose() {
         btn.disabled = false;
         btn.textContent = 'Wyślij';
     }
+}
+/**
+ * @brief Closes the compose new message modal overlay.
+ */
+function closeCompose() {
+    document.getElementById('composeOverlay').classList.remove('open');
+}
+
+/**
+ * @brief Closes the compose modal when the user clicks on the background overlay.
+ */
+function overlayClick(e) {
+    if (e.target === document.getElementById('composeOverlay')) closeCompose();
 }

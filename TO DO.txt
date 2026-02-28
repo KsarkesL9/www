@@ -1,0 +1,16 @@
+Utworzenie użytkownika wpisuje go do tabeli users bazy danych jednak nie umieszcza wpisu w tabeli dla roli np. admins, teachers itp. [FIXED]
+Dashboard powinien być inny dla każdej z ról. [FIXED]
+Polskie znaki są niepoprawnie sformatowane w pliku messages.php. [FIXED]
+Funkcja oceny siły hasła przy rejestracji i zmianie hasła jest zbyt optymistyczna. [FIXED]
+Sprawdzanie czy konto jest aktywne jest wykonywane przed sprawdzeniem czy hasło do konta jest poprawne - wyciek danych [FIXED]
+Wysłanie wiadomości jest niemożliwe dla pewnych kombinacji ról np. uczeń -> administrator co jest pożądane jednak należy przy takiej 
+próbie poinformować użytkownika, że nie ma takich uprawnień. [FIXED]
+Nie można wybrać adresata wiadomości kliknięcie na pozycję z listy nie ustawia adresata. [FIXED]
+Dlaczego przesyłamy do użytkownika id użytkownika szukanego w wiadomościach? Wyciek danych [FIXED]
+Skopiowanie do schowka powinno się odbyć po kliknięciu skopiuj token a nie w alercie do skopiowania manualnego. [FIXED]
+Usunąć emotkę w przycisku "Skopiuj token" i zmniejszyć przycisk do złotego przycisku. [FIXED]
+Usunąć z przycisków wszystkie strzałki. [FIXED]
+Resetowania hasła z posiadanym tokenem powinno być osobnym modułem do wybrania z strony głównej a nie etapem resetowania hasła. [FIXED]
+Usunąć placeholdery na nowe hasło i potwierdzenie. [FIXED]
+Komunikat Wylogowano pomyślnie. Do zobaczenia! powinien zniknąć po 5 sekundach. [FIXED] 
+

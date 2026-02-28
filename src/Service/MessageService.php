@@ -75,6 +75,18 @@ class MessageService
             return ['success' => false, 'message' => 'Żaden z podanych odbiorców nie ma aktywnego konta.'];
         }
 
+        // --- NEW LOGIC: Prevent sending messages to administrators if the sender is a student ---
+        $roles = $this->userRepo->getRolesByUserIds(array_merge([$senderId], $validRecipients));
+        $senderRole = $roles[$senderId] ?? null;
+
+        if ($senderRole === 'uczeń') {
+            foreach ($validRecipients as $recId) {
+                if (($roles[$recId] ?? null) === 'administrator') {
+                    return ['success' => false, 'message' => 'Nie masz uprawnień do wysłania wiadomości do administratora.'];
+                }
+            }
+        }
+
         $this->messageRepo->beginTransaction();
         try {
             $threadId = $this->messageRepo->createThread($subject ?: null);

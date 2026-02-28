@@ -13,21 +13,21 @@
 /**
  * @brief Checks how strong a password is and updates a visual bar and label.
  *
- * @details The function gives the password a score from 0 to 5.
- *          Each of the following rules adds 1 point to the score:
- *          - The password is at least 8 characters long.
- *          - The password is at least 12 characters long.
- *          - The password has at least one uppercase letter (A-Z).
- *          - The password has at least one digit (0-9).
- *          - The password has at least one special character
- *            (anything that is not a letter or digit).
+ * @details The function evaluates the password using a restrictive model:
+ *          - Very strong (score 4): length >= 12 and 4 different character types.
+ *          - Strong      (score 3): length >= 10 and at least 3 character types.
+ *          - Medium      (score 2): length >= 8 and at least 2 character types.
+ *          - Weak        (score 1): length >= 6.
+ *          - Very weak   (score 0): length < 6 or empty string.
+ *
+ *          Character types included: lowercase, uppercase, digits, symbols.
  *
  *          The score is mapped to five strength levels:
- *          - Score 1: Very weak  (red,         20% bar width).
- *          - Score 2: Weak       (orange,       40% bar width).
- *          - Score 3: Medium     (yellow,       60% bar width).
- *          - Score 4: Strong     (light green,  80% bar width).
- *          - Score 5: Very strong (green,       100% bar width).
+ *          - Score 0: Very weak  (red,         20% bar width).
+ *          - Score 1: Weak       (orange,       40% bar width).
+ *          - Score 2: Medium     (yellow,       60% bar width).
+ *          - Score 3: Strong     (light green,  80% bar width).
+ *          - Score 4: Very strong (green,       100% bar width).
  *
  *          The function finds the bar fill element and the label
  *          element by their IDs. It sets the width and background
@@ -48,11 +48,26 @@
  */
 function checkPasswordStrength(pw, fillId = 'pwFill', labelId = 'pwLabel') {
     let score = 0;
-    if (pw.length >= 8) score++;
-    if (pw.length >= 12) score++;
-    if (/[A-Z]/.test(pw)) score++;
-    if (/[0-9]/.test(pw)) score++;
-    if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+    if (pw.length > 0) {
+        let types = 0;
+        if (/[a-z]/.test(pw)) types++;
+        if (/[A-Z]/.test(pw)) types++;
+        if (/[0-9]/.test(pw)) types++;
+        if (/[^A-Za-z0-9]/.test(pw)) types++;
+
+        if (pw.length >= 12 && types === 4) {
+            score = 4;
+        } else if (pw.length >= 10 && types >= 3) {
+            score = 3;
+        } else if (pw.length >= 8 && types >= 2) {
+            score = 2;
+        } else if (pw.length >= 6) {
+            score = 1;
+        } else {
+            score = 0;
+        }
+    }
 
     const levels = [
         { w: '20%', c: '#f87171', l: 'Bardzo słabe' },
@@ -61,7 +76,7 @@ function checkPasswordStrength(pw, fillId = 'pwFill', labelId = 'pwLabel') {
         { w: '80%', c: '#a3e635', l: 'Mocne' },
         { w: '100%', c: '#34d399', l: 'Bardzo mocne' },
     ];
-    const lv = levels[Math.min(score, 4)];
+    const lv = levels[score];
 
     const fill = document.getElementById(fillId);
     if (fill) {

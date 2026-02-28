@@ -136,46 +136,48 @@
                 </div>
 
                 <!-- Recent absences -->
-                <div class="dash-card" style="animation-delay:0.1s">
-                    <div class="dash-card-header">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Ostatnie nieobecności
-                    </div>
-                    <div class="dash-card-body" style="padding:0.4rem 1.4rem;">
-                        <?php if (empty($absences)): ?>
-                            <div class="dash-empty">
-                                Brak zarejestrowanych nieobecności
-                            </div>
-                        <?php else: ?>
-                            <?php foreach ($absences as $a):
-                                $dotColor = $statusColors[mb_strtolower($a['status_name'])] ?? 'var(--text-muted)';
-                                ?>
-                                <div class="dash-absence-item">
-                                    <div class="dash-absence-dot" style="background:<?= $dotColor ?>;"></div>
-                                    <div>
-                                        <div style="font-weight:600; font-size:0.95rem;">
-                                            <?= date('d.m.Y', strtotime($a['lesson_date'])) ?>
-                                            (<?= $daysOfWeekPL[(int) date('w', strtotime($a['lesson_date']))] ?>)
-                                        </div>
-                                        <div
-                                            style="font-size:0.82rem; color:var(--text-muted); display:flex; gap:0.5rem; align-items:center;">
-                                            <span style="color:<?= $dotColor ?>; font-weight:600;">
-                                                <?= htmlspecialchars(ucfirst($a['status_name'])) ?>
-                                            </span>
-                                            <?php if (!empty($a['excuse_note'])): ?>
-                                                · <span><?= htmlspecialchars($a['excuse_note']) ?></span>
-                                            <?php endif; ?>
+                <?php if (in_array((int) $session['role_id'], [1, 3])): ?>
+                    <div class="dash-card" style="animation-delay:0.1s">
+                        <div class="dash-card-header">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Ostatnie nieobecności
+                        </div>
+                        <div class="dash-card-body" style="padding:0.4rem 1.4rem;">
+                            <?php if (empty($absences)): ?>
+                                <div class="dash-empty">
+                                    Brak zarejestrowanych nieobecności
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($absences as $a):
+                                    $dotColor = $statusColors[mb_strtolower($a['status_name'])] ?? 'var(--text-muted)';
+                                    ?>
+                                    <div class="dash-absence-item">
+                                        <div class="dash-absence-dot" style="background:<?= $dotColor ?>;"></div>
+                                        <div>
+                                            <div style="font-weight:600; font-size:0.95rem;">
+                                                <?= date('d.m.Y', strtotime($a['lesson_date'])) ?>
+                                                (<?= $daysOfWeekPL[(int) date('w', strtotime($a['lesson_date']))] ?>)
+                                            </div>
+                                            <div
+                                                style="font-size:0.82rem; color:var(--text-muted); display:flex; gap:0.5rem; align-items:center;">
+                                                <span style="color:<?= $dotColor ?>; font-weight:600;">
+                                                    <?= htmlspecialchars(ucfirst($a['status_name'])) ?>
+                                                </span>
+                                                <?php if (!empty($a['excuse_note'])): ?>
+                                                    · <span><?= htmlspecialchars($a['excuse_note']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
+                <?php endif; ?>
 
             </div><!-- /col 1 -->
 
@@ -185,78 +187,111 @@
                 <!-- Quick actions -->
                 <div class="dash-card" style="animation-delay:0.08s">
                     <div class="dash-card-body">
-                        <a href="/pages/student.php" class="dash-action-btn blue">
-                            <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span>Uczeń</span>
-                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                stroke-width="2.5" style="margin-left:auto;">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </a>
-
+                        <?php if (in_array((int) $session['role_id'], [1, 3])): ?>
+                            <a href="/pages/student.php" class="dash-action-btn blue">
+                                <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span>Uczeń</span>
+                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2.5" style="margin-left:auto;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        <?php elseif ((int) $session['role_id'] === 2): ?>
+                            <a href="#" class="dash-action-btn"
+                                style="background:var(--gold-dim); color:var(--gold); border-color:rgba(233,184,74,0.3);">
+                                <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                                <span>Nauczyciel</span>
+                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2.5" style="margin-left:auto;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        <?php elseif ((int) $session['role_id'] === 4): ?>
+                            <a href="#" class="dash-action-btn"
+                                style="background:var(--danger-dim); color:var(--danger); border-color:rgba(239,68,68,0.3);">
+                                <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>Administrator</span>
+                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2.5" style="margin-left:auto;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
 
                 <!-- Recent grades -->
-                <div class="dash-card" style="animation-delay:0.14s">
-                    <div class="dash-card-header">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        Ostatnie oceny
-                    </div>
-                    <div class="dash-card-body">
-                        <?php if (empty($gradesBySubject)): ?>
-                            <div class="dash-empty">Brak wpisanych ocen</div>
-                        <?php else: ?>
-                            <div class="dash-student-name"><?= $fullName ?></div>
-                            <?php foreach ($gradesBySubject as $subject => $subGrades): ?>
-                                <div class="dash-grade-row">
-                                    <div class="dash-grade-subject"><?= htmlspecialchars($subject) ?></div>
-                                    <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
-                                        <?php foreach ($subGrades as $g):
-                                            /* Use color from DB if set, otherwise default style */
-                                            $gradeColor = (!empty($g['color']) && $g['color'] !== '#000000')
-                                                ? $g['color'] : null;
-                                            $isNew = (bool) $g['is_new'];
-                                            /* Format grade - remove .0 for integers */
-                                            $gradeDisplay = (fmod((float) $g['grade'], 1) == 0)
-                                                ? (int) $g['grade']
-                                                : $g['grade'];
-                                            ?>
-                                            <span class="dash-grade-value <?= $isNew ? 'dash-grade-new' : 'dash-grade-old' ?>"
-                                                title="<?= htmlspecialchars(
-                                                    ($g['category_name'] ? $g['category_name'] . ' · ' : '') .
-                                                    'waga: ' . ($g['weight'] ?? '1.00') .
-                                                    ($g['description'] ? ' · ' . $g['description'] : '') .
-                                                    ' · ' . date('d.m.Y', strtotime($g['graded_at']))
-                                                ) ?>" <?= $gradeColor ? "style=\"border-color:{$gradeColor}; color:{$gradeColor};\"" : '' ?>>
-                                                <?= $gradeDisplay ?>
-                                            </span>
-                                        <?php endforeach; ?>
+                <?php if (in_array((int) $session['role_id'], [1, 3])): ?>
+                    <div class="dash-card" style="animation-delay:0.14s">
+                        <div class="dash-card-header">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            Ostatnie oceny
+                        </div>
+                        <div class="dash-card-body">
+                            <?php if (empty($gradesBySubject)): ?>
+                                <div class="dash-empty">Brak wpisanych ocen</div>
+                            <?php else: ?>
+                                <div class="dash-student-name"><?= $fullName ?></div>
+                                <?php foreach ($gradesBySubject as $subject => $subGrades): ?>
+                                    <div class="dash-grade-row">
+                                        <div class="dash-grade-subject"><?= htmlspecialchars($subject) ?></div>
+                                        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
+                                            <?php foreach ($subGrades as $g):
+                                                /* Use color from DB if set, otherwise default style */
+                                                $gradeColor = (!empty($g['color']) && $g['color'] !== '#000000')
+                                                    ? $g['color'] : null;
+                                                $isNew = (bool) $g['is_new'];
+                                                /* Format grade - remove .0 for integers */
+                                                $gradeDisplay = (fmod((float) $g['grade'], 1) == 0)
+                                                    ? (int) $g['grade']
+                                                    : $g['grade'];
+                                                ?>
+                                                <span class="dash-grade-value <?= $isNew ? 'dash-grade-new' : 'dash-grade-old' ?>"
+                                                    title="<?= htmlspecialchars(
+                                                        ($g['category_name'] ? $g['category_name'] . ' · ' : '') .
+                                                        'waga: ' . ($g['weight'] ?? '1.00') .
+                                                        ($g['description'] ? ' · ' . $g['description'] : '') .
+                                                        ' · ' . date('d.m.Y', strtotime($g['graded_at']))
+                                                    ) ?>" <?= $gradeColor ? "style=\"border-color:{$gradeColor}; color:{$gradeColor};\"" : '' ?>>
+                                                    <?= $gradeDisplay ?>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
                                     </div>
+                                <?php endforeach; ?>
+                                <div
+                                    style="margin-top:0.75rem; font-size:0.8rem; color:var(--text-muted); display:flex; gap:1rem; flex-wrap:wrap;">
+                                    <span style="display:inline-flex; align-items:center; gap:4px;">
+                                        <span class="dash-grade-value dash-grade-new"
+                                            style="width:22px;height:22px;font-size:0.7rem;">N</span>
+                                        nowa ocena (ostatnie 7 dni)
+                                    </span>
+                                    <span style="color:var(--text-muted); font-size:0.75rem;">
+                                        Najedź na ocenę po szczegóły
+                                    </span>
                                 </div>
-                            <?php endforeach; ?>
-                            <div
-                                style="margin-top:0.75rem; font-size:0.8rem; color:var(--text-muted); display:flex; gap:1rem; flex-wrap:wrap;">
-                                <span style="display:inline-flex; align-items:center; gap:4px;">
-                                    <span class="dash-grade-value dash-grade-new"
-                                        style="width:22px;height:22px;font-size:0.7rem;">N</span>
-                                    nowa ocena (ostatnie 7 dni)
-                                </span>
-                                <span style="color:var(--text-muted); font-size:0.75rem;">
-                                    Najedź na ocenę po szczegóły
-                                </span>
-                            </div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
+                <?php endif; ?>
 
             </div><!-- /col 2 -->
 
@@ -264,123 +299,125 @@
             <div style="display:flex; flex-direction:column; gap:1.5rem;">
 
                 <!-- Schedule -->
-                <div class="dash-card" style="animation-delay:0.12s">
-                    <div class="dash-card-header">
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        Plan zajęć
-                    </div>
-                    <div class="dash-card-body">
+                <?php if (in_array((int) $session['role_id'], [1, 2])): ?>
+                    <div class="dash-card" style="animation-delay:0.12s">
+                        <div class="dash-card-header">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Plan zajęć
+                        </div>
+                        <div class="dash-card-body">
 
-                        <?php if ($studentClassId === null): ?>
-                            <!-- User is not a student or has no assigned class -->
-                            <div class="dash-empty">
-                                Brak przypisanej klasy
-                            </div>
-
-                        <?php elseif ($isWeekend): ?>
-                            <!-- Weekend -->
-                            <div class="dash-empty" style="padding:1rem 0 0.5rem;">
-                                Dziś wolne – weekend!
-                            </div>
-
-                            <!-- Monday schedule -->
-                            <div class="dash-schedule-day" style="margin-top:1rem;">
-                                <div class="dash-schedule-label">
-                                    PONIEDZIAŁEK (<?= $nextMondayDate ?>)
+                            <?php if ($studentClassId === null): ?>
+                                <!-- User is not a student or has no assigned class -->
+                                <div class="dash-empty">
+                                    Brak przypisanej klasy
                                 </div>
-                                <?php if (empty($tomorrowSchedule)): ?>
-                                    <div class="dash-empty" style="padding:0.5rem 0; font-size:0.88rem;">Brak lekcji w planie
-                                    </div>
-                                <?php else: ?>
-                                    <?php foreach ($tomorrowSchedule as $l): ?>
-                                        <div class="dash-lesson">
-                                            <div class="dash-lesson-num"><?= (int) $l['lesson_number'] ?>.</div>
-                                            <div class="dash-lesson-info">
-                                                <div class="dash-lesson-subject"><?= htmlspecialchars($l['subject_name'] ?? '—') ?>
-                                                </div>
-                                                <div class="dash-lesson-meta">
-                                                    <?php if (!empty($l['classroom_name'])): ?>
-                                                        sala <?= htmlspecialchars($l['classroom_name']) ?> ·
-                                                    <?php endif; ?>
-                                                    <?= substr($l['start_hour'], 0, 5) ?>–<?= substr($l['end_hour'], 0, 5) ?>
-                                                    <?php if (!empty($l['teacher_name'])): ?>
-                                                        · <?= htmlspecialchars($l['teacher_name']) ?>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </div>
 
-                        <?php else: ?>
-                            <!-- Workday: today + tomorrow -->
-
-                            <!-- TODAY -->
-                            <div class="dash-schedule-day">
-                                <div class="dash-schedule-label">
-                                    DZIŚ (<?= $daysOfWeekPL[$todayDow] ?>, <?= date('d.m.Y') ?>)
+                            <?php elseif ($isWeekend): ?>
+                                <!-- Weekend -->
+                                <div class="dash-empty" style="padding:1rem 0 0.5rem;">
+                                    Dziś wolne – weekend!
                                 </div>
-                                <?php if (empty($todaySchedule)): ?>
-                                    <div class="dash-empty" style="padding:0.5rem 0; font-size:0.88rem;">Brak lekcji dzisiaj
+
+                                <!-- Monday schedule -->
+                                <div class="dash-schedule-day" style="margin-top:1rem;">
+                                    <div class="dash-schedule-label">
+                                        PONIEDZIAŁEK (<?= $nextMondayDate ?>)
                                     </div>
-                                <?php else: ?>
-                                    <?php foreach ($todaySchedule as $l): ?>
-                                        <div class="dash-lesson">
-                                            <div class="dash-lesson-num"><?= (int) $l['lesson_number'] ?>.</div>
-                                            <div class="dash-lesson-info">
-                                                <div class="dash-lesson-subject"><?= htmlspecialchars($l['subject_name'] ?? '—') ?>
-                                                </div>
-                                                <div class="dash-lesson-meta">
-                                                    <?php if (!empty($l['classroom_name'])): ?>
-                                                        sala <?= htmlspecialchars($l['classroom_name']) ?> ·
-                                                    <?php endif; ?>
-                                                    <?= substr($l['start_hour'], 0, 5) ?>–<?= substr($l['end_hour'], 0, 5) ?>
-                                                    <?php if (!empty($l['teacher_name'])): ?>
-                                                        · <?= htmlspecialchars($l['teacher_name']) ?>
-                                                    <?php endif; ?>
+                                    <?php if (empty($tomorrowSchedule)): ?>
+                                        <div class="dash-empty" style="padding:0.5rem 0; font-size:0.88rem;">Brak lekcji w planie
+                                        </div>
+                                    <?php else: ?>
+                                        <?php foreach ($tomorrowSchedule as $l): ?>
+                                            <div class="dash-lesson">
+                                                <div class="dash-lesson-num"><?= (int) $l['lesson_number'] ?>.</div>
+                                                <div class="dash-lesson-info">
+                                                    <div class="dash-lesson-subject"><?= htmlspecialchars($l['subject_name'] ?? '—') ?>
+                                                    </div>
+                                                    <div class="dash-lesson-meta">
+                                                        <?php if (!empty($l['classroom_name'])): ?>
+                                                            sala <?= htmlspecialchars($l['classroom_name']) ?> ·
+                                                        <?php endif; ?>
+                                                        <?= substr($l['start_hour'], 0, 5) ?>–<?= substr($l['end_hour'], 0, 5) ?>
+                                                        <?php if (!empty($l['teacher_name'])): ?>
+                                                            · <?= htmlspecialchars($l['teacher_name']) ?>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
 
-                            <!-- TOMORROW -->
-                            <div class="dash-schedule-day">
-                                <div class="dash-schedule-label"><?= $tomorrowLabel ?></div>
-                                <?php if (empty($tomorrowSchedule)): ?>
-                                    <div class="dash-empty" style="padding:0.5rem 0; font-size:0.88rem;">Brak lekcji jutro</div>
-                                <?php else: ?>
-                                    <?php foreach ($tomorrowSchedule as $l): ?>
-                                        <div class="dash-lesson">
-                                            <div class="dash-lesson-num"><?= (int) $l['lesson_number'] ?>.</div>
-                                            <div class="dash-lesson-info">
-                                                <div class="dash-lesson-subject"><?= htmlspecialchars($l['subject_name'] ?? '—') ?>
-                                                </div>
-                                                <div class="dash-lesson-meta">
-                                                    <?php if (!empty($l['classroom_name'])): ?>
-                                                        sala <?= htmlspecialchars($l['classroom_name']) ?> ·
-                                                    <?php endif; ?>
-                                                    <?= substr($l['start_hour'], 0, 5) ?>–<?= substr($l['end_hour'], 0, 5) ?>
-                                                    <?php if (!empty($l['teacher_name'])): ?>
-                                                        · <?= htmlspecialchars($l['teacher_name']) ?>
-                                                    <?php endif; ?>
+                            <?php else: ?>
+                                <!-- Workday: today + tomorrow -->
+
+                                <!-- TODAY -->
+                                <div class="dash-schedule-day">
+                                    <div class="dash-schedule-label">
+                                        DZIŚ (<?= $daysOfWeekPL[$todayDow] ?>, <?= date('d.m.Y') ?>)
+                                    </div>
+                                    <?php if (empty($todaySchedule)): ?>
+                                        <div class="dash-empty" style="padding:0.5rem 0; font-size:0.88rem;">Brak lekcji dzisiaj
+                                        </div>
+                                    <?php else: ?>
+                                        <?php foreach ($todaySchedule as $l): ?>
+                                            <div class="dash-lesson">
+                                                <div class="dash-lesson-num"><?= (int) $l['lesson_number'] ?>.</div>
+                                                <div class="dash-lesson-info">
+                                                    <div class="dash-lesson-subject"><?= htmlspecialchars($l['subject_name'] ?? '—') ?>
+                                                    </div>
+                                                    <div class="dash-lesson-meta">
+                                                        <?php if (!empty($l['classroom_name'])): ?>
+                                                            sala <?= htmlspecialchars($l['classroom_name']) ?> ·
+                                                        <?php endif; ?>
+                                                        <?= substr($l['start_hour'], 0, 5) ?>–<?= substr($l['end_hour'], 0, 5) ?>
+                                                        <?php if (!empty($l['teacher_name'])): ?>
+                                                            · <?= htmlspecialchars($l['teacher_name']) ?>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
 
-                        <?php endif; ?>
+                                <!-- TOMORROW -->
+                                <div class="dash-schedule-day">
+                                    <div class="dash-schedule-label"><?= $tomorrowLabel ?></div>
+                                    <?php if (empty($tomorrowSchedule)): ?>
+                                        <div class="dash-empty" style="padding:0.5rem 0; font-size:0.88rem;">Brak lekcji jutro</div>
+                                    <?php else: ?>
+                                        <?php foreach ($tomorrowSchedule as $l): ?>
+                                            <div class="dash-lesson">
+                                                <div class="dash-lesson-num"><?= (int) $l['lesson_number'] ?>.</div>
+                                                <div class="dash-lesson-info">
+                                                    <div class="dash-lesson-subject"><?= htmlspecialchars($l['subject_name'] ?? '—') ?>
+                                                    </div>
+                                                    <div class="dash-lesson-meta">
+                                                        <?php if (!empty($l['classroom_name'])): ?>
+                                                            sala <?= htmlspecialchars($l['classroom_name']) ?> ·
+                                                        <?php endif; ?>
+                                                        <?= substr($l['start_hour'], 0, 5) ?>–<?= substr($l['end_hour'], 0, 5) ?>
+                                                        <?php if (!empty($l['teacher_name'])): ?>
+                                                            · <?= htmlspecialchars($l['teacher_name']) ?>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
 
+                            <?php endif; ?>
+
+                        </div>
                     </div>
-                </div>
+                <?php endif; ?>
 
             </div><!-- /col 3 -->
 

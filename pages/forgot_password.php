@@ -60,7 +60,7 @@
                         Token wygenerowany
                     </h3>
                     <p style="color:var(--text-muted); font-size:0.85rem;">
-                        Skopiuj token poniżej i użyj go na stronie resetowania hasła.
+                        Skopiuj token poniżej i użyj go korzystając z odpowiedniej opcji na stronie głównej logowania.
                     </p>
                 </div>
 
@@ -72,19 +72,19 @@
                     ⚠️ Token jest ważny przez <strong>30 minut</strong>. Zachowaj go w bezpiecznym miejscu.
                 </div>
 
-                <button onclick="copyToken()" class="btn-ghost" style="width:100%; margin-bottom:0.75rem;">
-                    📋 Skopiuj token
-                </button>
+                <div style="text-align:center;">
+                    <button onclick="copyToken(event)" class="btn-primary"
+                        style="padding:0.5rem 1rem; width:auto; text-transform:none; font-size:0.9rem; margin-bottom:1.5rem;">
+                        Skopiuj token
+                    </button>
+                </div>
 
-                <a href="/pages/reset_password.php" class="btn-primary"
-                    style="display:block; text-decoration:none; text-align:center; padding:0.75rem;">
-                    Zresetuj hasło →
-                </a>
             </div>
 
             <div style="text-align:center; margin-top:1.5rem;">
-                <a href="/pages/login.php" style="color:var(--text-muted); font-size:0.85rem; text-decoration:none;">
-                    ← Wróć do logowania
+                <a href="/pages/login.php" class="btn-primary"
+                    style="display:inline-block; text-decoration:none; padding:0.75rem 2rem; width:auto; text-transform:none;">
+                    Wróć do logowania
                 </a>
             </div>
         </div>
@@ -127,14 +127,14 @@
             }
         });
 
-        async function copyToken() {
+        async function copyToken(event) {
             try {
                 await navigator.clipboard.writeText(generatedToken);
                 const btn = event.target;
-                btn.textContent = '✅ Skopiowano!';
-                setTimeout(() => btn.textContent = '📋 Skopiuj token', 2000);
+                btn.textContent = 'Skopiowano!';
+                setTimeout(() => btn.textContent = 'Skopiuj token', 2000);
             } catch {
-                alert('Skopiuj ręcznie: ' + generatedToken);
+                showAlert('error', 'Nie udało się skopiować tokenu automatycznie.');
             }
         }
     </script>

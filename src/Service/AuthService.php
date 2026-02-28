@@ -71,7 +71,24 @@ class AuthService
 
         $userId = $user->getUserId();
 
-        // Check account status — using business methods on the User entity
+        // Verify password FIRST to prevent account status enumeration/data leak
+        if (!password_verify($password, $user->getPassword())) {
+            $newAttempts = $this->userRepo->incrementFailedLogins($userId);
+
+            if ($newAttempts >= self::MAX_FAILED_ATTEMPTS) {
+                $blockedStatusId = $this->lookupRepo->getStatusIdByName('zablokowany');
+                if ($blockedStatusId !== null && !$user->isBlocked()) {
+                    $this->userRepo->updateStatus($userId, $blockedStatusId);
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Nieprawidłowy login lub hasło.',
+            ];
+        }
+
+        // Check account status ONLY AFTER verifying the correct password
         if ($user->isBlocked()) {
             return [
                 'success' => false,
@@ -90,28 +107,6 @@ class AuthService
             return [
                 'success' => false,
                 'message' => 'Twoje konto jest nieaktywne. Skontaktuj się z administratorem.',
-            ];
-        }
-
-        // Verify password
-        if (!password_verify($password, $user->getPassword())) {
-            $newAttempts = $this->userRepo->incrementFailedLogins($userId);
-
-            if ($newAttempts >= self::MAX_FAILED_ATTEMPTS) {
-                $blockedStatusId = $this->lookupRepo->getStatusIdByName('zablokowany');
-                if ($blockedStatusId !== null) {
-                    $this->userRepo->updateStatus($userId, $blockedStatusId);
-                }
-                return [
-                    'success' => false,
-                    'message' => 'Konto zostało zablokowane po 5 nieudanych próbach logowania. Zresetuj hasło, aby je odblokować.',
-                ];
-            }
-
-            $remaining = self::MAX_FAILED_ATTEMPTS - $newAttempts;
-            return [
-                'success' => false,
-                'message' => "Nieprawidłowy login lub hasło. Pozostało prób: $remaining.",
             ];
         }
 

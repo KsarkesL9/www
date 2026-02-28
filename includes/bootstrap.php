@@ -255,6 +255,43 @@ function redirectIfLoggedIn(): void
     }
 }
 
+// ─── ID Obfuscation helpers ───────────────────────────────
+
+/**
+ * @brief Obfuscates a database ID for the frontend.
+ * 
+ * @param int $id The numeric database ID.
+ * @return string The obfuscated string.
+ */
+function obfuscateId(int $id): string
+{
+    $token = $_COOKIE['session_token'] ?? 'default_fallback_session_key_123';
+    $key = hash('sha256', $token, true);
+    $iv = openssl_random_pseudo_bytes(16);
+    $encrypted = openssl_encrypt((string) $id, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+    return rtrim(strtr(base64_encode($iv . $encrypted), '+/', '-_'), '=');
+}
+
+/**
+ * @brief Deobfuscates a string back to a database ID.
+ * 
+ * @param string $obfuscatedId The string received from frontend.
+ * @return int|null The numeric database ID or null if invalid.
+ */
+function deobfuscateId(string $obfuscatedId): ?int
+{
+    $token = $_COOKIE['session_token'] ?? 'default_fallback_session_key_123';
+    $key = hash('sha256', $token, true);
+    $decoded = base64_decode(strtr($obfuscatedId, '-_', '+/'));
+    if (strlen($decoded) < 17) {
+        return null;
+    }
+    $iv = substr($decoded, 0, 16);
+    $encrypted = substr($decoded, 16);
+    $decrypted = openssl_decrypt($encrypted, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+    return is_numeric($decrypted) ? (int) $decrypted : null;
+}
+
 // ─── Cookie helpers ─────────────────────────────────────
 
 /**

@@ -1,10 +1,17 @@
 <?php
 
 /**
- * API: Rejestracja użytkownika.
+ * @file
+ * @brief HTTP API handler for user registration.
  *
- * Handler HTTP — parsuje request, wywołuje serwis, zwraca odpowiedź.
- * Zero logiki biznesowej, zero SQL.
+ * @details This endpoint parses the incoming HTTP POST request containing
+ *          the registration form data, and uses the registration service
+ *          to create a new user account. It contains zero business logic 
+ *          and zero SQL queries.
+ *
+ * @param array $input JSON payload containing registration data (e.g., login, password, email).
+ *
+ * @return void Returns a JSON response containing success status, message, and validation error fields if applicable.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';

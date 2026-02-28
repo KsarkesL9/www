@@ -32,7 +32,7 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WiadomoĹ›ci â€“ Edux</title>
+    <title>Wiadomości – Edux</title>
     <link rel="stylesheet" href="/assets/css/style.css?v=<?= time() ?>">
     <script src="/assets/js/theme.js?v=<?= time() ?>"></script>
     <style>
@@ -398,7 +398,7 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
             border: 1px solid var(--navy-border);
             border-radius: 20px;
             padding: 2rem;
-            width: 560px;
+            width: 1000px;
             max-width: 95vw;
             box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
             transform: translateY(20px) scale(0.97);
@@ -453,7 +453,7 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
 
         .compose-modal textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 400px;
         }
 
         .compose-footer {
@@ -463,85 +463,107 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
             margin-top: 0.5rem;
         }
 
-        /* Recipient tags */
-        .recipient-tags {
+        .compose-footer button {
+            margin: 0;
+        }
+
+        /* Recipient picker dual-pane UI */
+        .recipient-picker {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem;
-            margin-bottom: 0.4rem;
-            min-height: 0;
+            gap: 1rem;
+            height: 320px;
+            margin-bottom: 0.5rem;
         }
 
-        .recipient-tag {
-            background: var(--gold-dim);
-            border: 1px solid rgba(233, 184, 74, 0.3);
-            border-radius: 20px;
-            padding: 0.2rem 0.6rem;
-            font-size: 0.78rem;
-            color: var(--gold);
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-
-        .recipient-tag button {
-            background: none;
-            border: none;
-            color: var(--gold);
-            cursor: pointer;
-            padding: 0;
-            font-size: 0.9rem;
-            line-height: 1;
-            opacity: 0.7;
-        }
-
-        .recipient-tag button:hover {
-            opacity: 1;
-        }
-
-        /* User search dropdown */
-        .user-search-wrap {
-            position: relative;
-        }
-
-        .user-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: var(--navy-card);
-            border: 1px solid var(--navy-border);
-            border-radius: 10px;
-            margin-top: 4px;
-            z-index: 100;
-            max-height: 200px;
-            overflow-y: auto;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            display: none;
-        }
-
-        .user-dropdown.show {
-            display: block;
-        }
-
-        .user-dropdown-item {
-            padding: 0.6rem 1rem;
-            cursor: pointer;
-            font-size: 0.88rem;
-            color: var(--text);
+        .picker-panel {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 0.1rem;
-            transition: background 0.15s;
+            gap: 0.5rem;
+            min-width: 0;
         }
 
-        .user-dropdown-item:hover {
+        .picker-controls {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .picker-controls select,
+        .picker-controls input {
+            padding: 0.4rem 0.6rem !important;
+            font-size: 0.82rem !important;
+            border-radius: 6px !important;
+            margin: 0 !important;
+        }
+
+        .picker-list {
+            flex: 1;
+            background: var(--navy);
+            border: 1px solid var(--navy-border);
+            border-radius: 8px;
+            overflow-y: auto;
+            padding: 0.3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .picker-item {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+            transition: background 0.15s, color 0.15s;
+            color: var(--text);
+        }
+
+        .picker-item:hover {
+            background: var(--navy-light);
+        }
+
+        .picker-item.active {
             background: var(--gold-dim);
+            color: var(--gold);
+            font-weight: 500;
         }
 
-        .user-dropdown-item small {
+        .picker-item small {
             color: var(--text-muted);
             font-size: 0.72rem;
+            font-weight: 400;
+        }
+
+        .picker-actions {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.8rem;
+            padding: 0 0.5rem;
+        }
+
+        .picker-actions button {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: var(--navy-light);
+            border: 1px solid var(--navy-border);
+            color: var(--text);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .picker-actions button:hover {
+            background: var(--gold-dim);
+            color: var(--gold);
+            border-color: var(--gold);
         }
 
         /* Loading state */
@@ -623,13 +645,13 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
 
         <div style="display:flex; align-items:center; gap:0.6rem;">
             <a href="/pages/dashboard.php" class="btn-ghost" style="padding:0.4rem 0.9rem; font-size:0.82rem;">
-                â† Panel gĹ‚Ăłwny
+                Panel główny
             </a>
-            <span style="font-size:1rem; font-weight:600; color:var(--text);">WiadomoĹ›ci</span>
+            <span style="font-size:1rem; font-weight:600; color:var(--text);">Wiadomości</span>
         </div>
 
         <div class="dash-user-info">
-            <div class="dash-session-badge" id="sessionBadge" title="PozostaĹ‚y czas sesji">â€“</div>
+            <div class="dash-session-badge" id="sessionBadge" title="Pozostały czas sesji">–</div>
             <div class="dash-avatar"><?= $initials ?></div>
             <div style="line-height:1.25;">
                 <div style="font-size:0.95rem; font-weight:600; color:var(--text);"><?= $fullName ?></div>
@@ -657,8 +679,7 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
             </div>
 
             <div class="msg-search">
-                <input type="text" id="threadSearch" placeholder="Szukaj wÄ…tkĂłwâ€¦"
-                    oninput="filterThreads(this.value)">
+                <input type="text" id="threadSearch" placeholder="Szukaj wątków…" oninput="filterThreads(this.value)">
             </div>
 
             <div class="msg-thread-list" id="threadList">
@@ -670,7 +691,7 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        <span style="font-size:0.82rem;">Brak wiadomoĹ›ci</span>
+                        <span style="font-size:0.82rem;">Brak wiadomości</span>
                     </div>
                 <?php else: ?>
                     <?php foreach ($threads as $t):
@@ -679,8 +700,8 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
                         $parts = $threadParticipants[$t['thread_id']] ?? [];
                         $partNames = implode(', ', array_map(fn($p) => $p['name'], $parts));
                         $preview = $t['last_content']
-                            ? mb_substr(strip_tags($t['last_content']), 0, 60) . (mb_strlen($t['last_content']) > 60 ? 'â€¦' : '')
-                            : '(brak wiadomoĹ›ci)';
+                            ? mb_substr(strip_tags($t['last_content']), 0, 60) . (mb_strlen($t['last_content']) > 60 ? '…' : '')
+                            : '(brak wiadomości)';
                         $timeLabel = $t['last_at']
                             ? (date('Y-m-d', strtotime($t['last_at'])) === date('Y-m-d')
                                 ? date('H:i', strtotime($t['last_at']))
@@ -735,7 +756,7 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
                                 <?php endforeach; ?>
                             </span>
                             <span style="color:var(--navy-border);">|</span>
-                            <span>WÄ…tek od <?= date('d.m.Y', strtotime($thread['created_at'])) ?></span>
+                            <span>Wątek od <?= date('d.m.Y', strtotime($thread['created_at'])) ?></span>
                             <span style="color:var(--navy-border);">|</span>
                             <span><?= count($messages) ?> wiad.</span>
                         </div>
@@ -750,7 +771,7 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                 </svg>
-                                <span>Brak wiadomoĹ›ci w tym wÄ…tku</span>
+                                <span>Brak wiadomości w tym wątku</span>
                             </div>
                         <?php else: ?>
                             <?php foreach ($messages as $m):
@@ -768,13 +789,13 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
                                         </div>
                                     <?php endif; ?>
                                     <div class="msg-bubble <?= $isDeleted ? 'deleted' : '' ?>">
-                                        <?= $isDeleted ? 'WiadomoĹ›Ä‡ zostaĹ‚a usuniÄ™ta' : nl2br(htmlspecialchars($m['content'])) ?>
+                                        <?= $isDeleted ? 'Wiadomość została usunięta' : nl2br(htmlspecialchars($m['content'])) ?>
                                     </div>
                                     <div class="msg-bubble-time"><?= $timeStr ?></div>
                                     <?php if ($isMine && !$isDeleted): ?>
                                         <button class="msg-delete-btn" onclick="deleteMessage(<?= $m['message_id'] ?>, this)"
-                                            title="UsuĹ„ wiadomoĹ›Ä‡">
-                                            UsuĹ„
+                                            title="Usuń wiadomość">
+                                            Usuń
                                         </button>
                                     <?php endif; ?>
                                 </div>
@@ -784,9 +805,9 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
 
                     <!-- Reply box -->
                     <div class="msg-reply">
-                        <textarea id="replyContent" placeholder="Napisz odpowiedĹşâ€¦" rows="2"
+                        <textarea id="replyContent" placeholder="Napisz odpowiedź…" rows="2"
                             onkeydown="replyKeydown(event)"></textarea>
-                        <button class="msg-send-btn" onclick="sendReply()" title="WyĹ›lij (Ctrl+Enter)">
+                        <button class="msg-send-btn" onclick="sendReply()" title="Wyślij (Ctrl+Enter)">
                             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                 stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -801,8 +822,8 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                         </svg>
-                        <span class="msg-empty-title">Brak dostÄ™pu do wÄ…tku</span>
-                        <span class="msg-empty-sub">Nie jesteĹ› uczestnikiem tego wÄ…tku.</span>
+                        <span class="msg-empty-title">Brak dostępu do wątku</span>
+                        <span class="msg-empty-sub">Nie jesteś uczestnikiem tego wątku.</span>
                     </div>
                 <?php endif; ?>
 
@@ -813,15 +834,15 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <span class="msg-empty-title">Wybierz wÄ…tek</span>
-                    <span class="msg-empty-sub">Kliknij wÄ…tek na liĹ›cie lub napisz nowÄ… wiadomoĹ›Ä‡.</span>
+                    <span class="msg-empty-title">Wybierz wątek</span>
+                    <span class="msg-empty-sub">Kliknij wątek na liście lub napisz nową wiadomość.</span>
                     <button class="msg-new-btn" onclick="openCompose()"
                         style="margin-top:0.5rem; padding:0.6rem 1.2rem; font-size:0.88rem;">
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                             stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
-                        Nowa wiadomoĹ›Ä‡
+                        Nowa wiadomość
                     </button>
                 </div>
             <?php endif; ?>
@@ -831,35 +852,61 @@ $sessionExpiry = container()->dashboard->getDashboardData($userId, $_COOKIE['ses
     <!-- ===== COMPOSE MODAL ===== -->
     <div class="compose-overlay" id="composeOverlay" onclick="overlayClick(event)">
         <div class="compose-modal">
-            <div class="compose-title">Nowa wiadomoĹ›Ä‡</div>
+            <div class="compose-title">Nowa wiadomość</div>
 
             <div id="composeAlert" class="alert" style="margin-bottom:0;"></div>
 
             <div>
                 <label>Temat</label>
-                <input type="text" id="composeSubject" placeholder="Temat wiadomoĹ›ciâ€¦" maxlength="255">
+                <input type="text" id="composeSubject" placeholder="Temat wiadomości…" maxlength="255">
             </div>
 
             <div>
-                <label>Odbiorcy <span style="color:var(--gold);">*</span></label>
-                <div class="recipient-tags" id="recipientTags"></div>
-                <div class="user-search-wrap">
-                    <input type="text" id="recipientSearch" placeholder="Szukaj po imieniu lub nazwiskuâ€¦"
-                        oninput="searchUsers(this.value)" autocomplete="off">
-                    <div class="user-dropdown" id="userDropdown"></div>
+                <label>Odbiorcy (wyszukiwanie i dodawanie) <span style="color:var(--gold);">*</span></label>
+                <div class="recipient-picker" id="recipientPickerWrap" style="display:none;">
+                    <div class="picker-panel">
+                        <div class="picker-controls">
+                            <select id="pickerRoleSelect" onchange="pickerFilter()" style="flex:1;">
+                                <option value="ALL">Wszystkie grupy</option>
+                            </select>
+                        </div>
+                        <div class="picker-controls">
+                            <input type="text" id="pickerSearch" placeholder="wyszukaj..." oninput="pickerFilter()" style="width:100%;">
+                        </div>
+                        <div class="picker-list" id="pickerAvailableList">
+                        </div>
+                    </div>
+                    
+                    <div class="picker-actions">
+                        <button type="button" onclick="pickerAddSelected()" title="Dodaj do odbiorców">&#8594;</button>
+                        <button type="button" onclick="pickerRemoveSelected()" title="Usuń z odbiorców">&#8592;</button>
+                    </div>
+
+                    <div class="picker-panel">
+                        <div style="font-size: 0.78rem; font-weight:600; color:var(--text-muted); margin-bottom: 0.1rem; text-transform:uppercase;">
+                            Wybrani adresaci
+                        </div>
+                        <div class="picker-list" id="pickerSelectedList">
+                        </div>
+                    </div>
+                </div>
+                <!-- fallback text when loading -->
+                <div id="pickerLoading" style="color:var(--text-muted); padding:1rem; text-align:center;">
+                    <span class="spinner"></span> Ładowanie dostępnych odbiorców…
                 </div>
             </div>
 
             <div>
-                <label>WiadomoĹ›Ä‡ <span style="color:var(--gold);">*</span></label>
-                <textarea id="composeContent" placeholder="TreĹ›Ä‡ wiadomoĹ›ciâ€¦" rows="4"></textarea>
+                <label>Wiadomość <span style="color:var(--gold);">*</span></label>
+                <textarea id="composeContent" placeholder="Treść wiadomości…" rows="4"></textarea>
             </div>
 
             <div class="compose-footer">
-                <button class="btn-ghost" onclick="closeCompose()">Anuluj</button>
+                <button class="btn-ghost" style="width:auto; padding:0.65rem 1.8rem;"
+                    onclick="closeCompose()">Anuluj</button>
                 <button class="btn-primary" style="width:auto; padding:0.65rem 1.8rem;" onclick="sendCompose()"
                     id="composeSendBtn">
-                    WyĹ›lij
+                    Wyślij
                 </button>
             </div>
         </div>

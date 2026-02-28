@@ -1,9 +1,16 @@
 <?php
 
 /**
- * API: Wysłanie wiadomości w istniejącym wątku.
+ * @file
+ * @brief HTTP API handler for sending a reply in an existing thread.
  *
- * Handler HTTP — zero logiki biznesowej, zero SQL, zero transakcji.
+ * @details This endpoint handles authenticated POST requests to send a new message
+ *          to a specific thread. It uses the message service to process the action. 
+ *          Contains zero business logic, zero SQL, and zero transactions.
+ *
+ * @param array $input JSON payload containing 'thread_id' and 'content'.
+ *
+ * @return void Returns a JSON response containing the success status, message, and the new message data.
  */
 
 require_once __DIR__ . '/../../includes/bootstrap.php';

@@ -1,10 +1,16 @@
 <?php
 
 /**
- * API: Logowanie użytkownika.
+ * @file
+ * @brief HTTP API handler for user authentication.
  *
- * Handler HTTP — parsuje request, wywołuje serwis, zwraca odpowiedź.
- * Zero logiki biznesowej, zero SQL.
+ * @details This endpoint parses the incoming HTTP POST request, extracts 
+ *          the login and password, and delegates the work to the authentication 
+ *          service. It contains zero business logic and zero SQL queries.
+ *
+ * @param array $input JSON payload containing 'login' and 'password'.
+ *
+ * @return void Returns a JSON response containing success status, message, and a session token on successful login.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';

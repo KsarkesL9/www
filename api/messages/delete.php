@@ -1,9 +1,16 @@
 <?php
 
 /**
- * API: Usunięcie wiadomości (soft delete).
+ * @file
+ * @brief HTTP API handler for soft deleting a message.
  *
- * Handler HTTP — zero logiki biznesowej, zero SQL.
+ * @details This endpoint processes an authenticated POST request to remove a specific
+ *          message. It delegates the deletion operation to the message service. 
+ *          Contains zero business logic and zero SQL.
+ *
+ * @param array $input JSON payload containing 'message_id'.
+ *
+ * @return void Returns a JSON response with the success status and message.
  */
 
 require_once __DIR__ . '/../../includes/bootstrap.php';

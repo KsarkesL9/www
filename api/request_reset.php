@@ -1,9 +1,16 @@
 <?php
 
 /**
- * API: Żądanie tokenu resetowania hasła.
+ * @file
+ * @brief HTTP API handler for requesting a password reset token.
  *
- * Handler HTTP — zero logiki biznesowej, zero SQL.
+ * @details This endpoint accepts a user's login and email address via POST,
+ *          validates the email format, and delegates token generation to the
+ *          password service. It contains zero business logic and zero SQL.
+ *
+ * @param array $input JSON payload containing 'login' and 'email_address'.
+ *
+ * @return void Returns a JSON response containing success status, message, the generated token, and expiration time.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';

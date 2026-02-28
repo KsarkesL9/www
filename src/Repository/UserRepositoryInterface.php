@@ -123,4 +123,28 @@ interface UserRepositoryInterface
      * @return array An array containing only the IDs of active users.
      */
     public function filterActiveUserIds(array $userIds): array;
+    /**
+     * @brief Gets roles for an array of user IDs.
+     * 
+     * @param array $userIds An array of integer user IDs.
+     * @return array An associative array [user_id => 'role_name'].
+     */
+    public function getRolesByUserIds(array $userIds): array;
+
+    /**
+     * @brief Assigns a user to the corresponding role table.
+     * 
+     * @param int $userId The ID of the user.
+     * @param int $roleId The role ID.
+     */
+    public function assignRoleToUser(int $userId, int $roleId): void;
+
+    /**
+     * @brief Gets all allowed message recipients for a given sender.
+     * 
+     * @param int $senderId The ID of the sender.
+     * @param int $senderRoleId The role ID of the sender.
+     * @return array List of recipients.
+     */
+    public function getAllowedMessageRecipients(int $senderId, int $senderRoleId): array;
 }

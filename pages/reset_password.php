@@ -49,8 +49,8 @@
                                 style="font-size:0.72rem; color:var(--text-muted); text-transform:none; letter-spacing:0;">(min.
                                 8 znaków)</span></label>
                         <div style="position:relative;">
-                            <input type="password" id="new_password" placeholder="••••••••" required
-                                autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
+                            <input type="password" id="new_password" required autocomplete="new-password"
+                                oninput="checkPasswordStrength(this.value)">
                             <button type="button" onclick="togglePw('new_password')"
                                 style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;">👁</button>
                         </div>
@@ -62,8 +62,7 @@
                     <div class="form-group">
                         <label>Potwierdź nowe hasło <span class="required">*</span></label>
                         <div style="position:relative;">
-                            <input type="password" id="confirm_password" placeholder="••••••••" required
-                                autocomplete="new-password">
+                            <input type="password" id="confirm_password" required autocomplete="new-password">
                             <button type="button" onclick="togglePw('confirm_password')"
                                 style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;">👁</button>
                         </div>
@@ -89,14 +88,14 @@
                 </p>
                 <a href="/pages/login.php" class="btn-primary"
                     style="display:inline-block; text-decoration:none; padding:0.75rem 2.5rem; width:auto;">
-                    Przejdź do logowania →
+                    Przejdź do logowania
                 </a>
             </div>
 
             <div style="text-align:center; margin-top:1.5rem;" id="backLink">
                 <a href="/pages/forgot_password.php"
                     style="color:var(--text-muted); font-size:0.85rem; text-decoration:none;">
-                    ← Nie masz tokenu? Wygeneruj tutaj
+                    Nie masz tokenu? Wygeneruj tutaj
                 </a>
             </div>
         </div>

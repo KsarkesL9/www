@@ -131,7 +131,7 @@ class RegistrationService
         $login = $this->generateLogin($firstName, $surname);
         $passwordHashed = password_hash($password, PASSWORD_BCRYPT);
 
-        $this->userRepo->insert([
+        $userId = $this->userRepo->insert([
             'role_id' => $roleId,
             'status_id' => $pendingStatusId,
             'first_name' => $firstName,
@@ -148,6 +148,8 @@ class RegistrationService
             'apartment_number' => $apartmentNumber ?: null,
             'phone_number' => $phoneNumber ?: null,
         ]);
+
+        $this->userRepo->assignRoleToUser($userId, $roleId);
 
         return ['success' => true, 'message' => 'Konto zostało pomyślnie utworzone.', 'login' => $login];
     }

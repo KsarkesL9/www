@@ -32,7 +32,8 @@
             <?php if ($msg === 'session_expired'): ?>
                 <div class="alert alert-info show">Sesja wygasła. Zaloguj się ponownie.</div>
             <?php elseif ($msg === 'logged_out'): ?>
-                <div class="alert alert-success show" style="display:flex; align-items:center; gap:0.6rem;">
+                <div id="logoutAlert" class="alert alert-success show"
+                    style="display:flex; align-items:center; gap:0.6rem;">
                     <span style="font-size:1.2rem;">✓</span>
                     Wylogowano pomyślnie. Do zobaczenia!
                 </div>
@@ -74,7 +75,11 @@
                     style="color:var(--gold); font-size:1.05rem; text-decoration:none;">
                     Zapomniałem hasła
                 </a>
-                <a href="/pages/register.php" style="color:var(--text-muted); font-size:1.05rem; text-decoration:none;">
+                <a href="/pages/reset_password.php" style="color:var(--gold); font-size:1.05rem; text-decoration:none;">
+                    Mam token resetowania hasła
+                </a>
+                <a href="/pages/register.php"
+                    style="color:var(--text-muted); font-size:1.05rem; text-decoration:none; margin-top:0.4rem;">
                     Nie masz konta?
                     <span style="color:var(--gold);">Zarejestruj się</span>
                 </a>
@@ -112,6 +117,16 @@
                 btn.textContent = 'Zaloguj się';
             }
         });
+
+        // Ukryj powiadomienie o wylogowaniu po 5 sekundach
+        const logoutAlert = document.getElementById('logoutAlert');
+        if (logoutAlert) {
+            setTimeout(() => {
+                logoutAlert.style.transition = 'opacity 0.3s ease';
+                logoutAlert.style.opacity = '0';
+                setTimeout(() => logoutAlert.remove(), 300);
+            }, 5000);
+        }
     </script>
 </body>
 

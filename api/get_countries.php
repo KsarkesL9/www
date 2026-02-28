@@ -1,9 +1,14 @@
 <?php
 
 /**
- * API: Lista krajów.
+ * @file
+ * @brief HTTP API handler for retrieving the list of countries.
  *
- * Handler HTTP — zero logiki biznesowej.
+ * @details This endpoint contains zero business logic. It calls the 
+ *          repository container to fetch all available countries.
+ *          It outputs a JSON array of country data.
+ *
+ * @return void Returns a JSON response containing success status and the countries array.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';

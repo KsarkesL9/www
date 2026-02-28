@@ -65,7 +65,7 @@
                     <div style="margin-top:1.5rem; display:flex; justify-content:flex-end; gap:0.75rem;">
                         <button type="button" class="btn-primary" style="width:auto; padding:0.65rem 2rem;"
                             onclick="nextStep(1)">
-                            Dalej →
+                            Dalej
                         </button>
                     </div>
                 </div>
@@ -128,9 +128,9 @@
                     </div>
 
                     <div style="margin-top:1rem; display:flex; justify-content:space-between; gap:0.75rem;">
-                        <button type="button" class="btn-ghost" onclick="prevStep(2)">← Wróć</button>
+                        <button type="button" class="btn-ghost" onclick="prevStep(2)">Wróć</button>
                         <button type="button" class="btn-primary" style="width:auto; padding:0.65rem 2rem;"
-                            onclick="nextStep(2)">Dalej →</button>
+                            onclick="nextStep(2)">Dalej</button>
                     </div>
                 </div>
 
@@ -158,9 +158,9 @@
                     </div>
 
                     <div style="margin-top:1rem; display:flex; justify-content:space-between; gap:0.75rem;">
-                        <button type="button" class="btn-ghost" onclick="prevStep(3)">← Wróć</button>
+                        <button type="button" class="btn-ghost" onclick="prevStep(3)">Wróć</button>
                         <button type="button" class="btn-primary" style="width:auto; padding:0.65rem 2rem;"
-                            onclick="nextStep(3)">Dalej →</button>
+                            onclick="nextStep(3)">Dalej</button>
                     </div>
                 </div>
 
@@ -213,7 +213,7 @@
                     </div>
 
                     <div style="display:flex; justify-content:space-between; gap:0.75rem;">
-                        <button type="button" class="btn-ghost" onclick="prevStep(4)">← Wróć</button>
+                        <button type="button" class="btn-ghost" onclick="prevStep(4)">Wróć</button>
                         <button type="submit" class="btn-primary" style="width:auto; padding:0.65rem 2rem;"
                             id="submitBtn">
                             Zarejestruj się
